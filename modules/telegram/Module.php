@@ -12,6 +12,10 @@ class Module extends \yii\base\Module
      */
     public $controllerNamespace = 'app\modules\telegram\controllers';
 
+    public $layout = 'main';
+
+    public $layoutPath = '@app/modules/telegram/views/layouts';
+
     /**
      * {@inheritdoc}
      */

@@ -14,15 +14,15 @@ class Module extends \yii\base\Module
      */
     public $controllerNamespace = 'app\modules\admin\controllers';
 
+    public $layout = 'main';
+
+    public $layoutPath = '@app/modules/admin/views/layouts';
+
     /**
      * {@inheritdoc}
      */
     public function init()
     {
         parent::init();
-
-        // Custom initialization code goes here
-        // Set layout for admin module
-        // Yii::$app->setLayoutPath('@app/modules/admin/views/layouts'); 
     }
 }

@@ -19,6 +19,10 @@ $config = [
         'singletons' => [
             'app\services\TextureService' => ['app\services\TextureService'],
             'app\services\RequestService' => ['app\services\RequestService'],
+            'app\services\TelegramService' => function () {
+                return Yii::$app->telegramService;
+            },
+            'app\services\TelegramUpdateService' => ['app\services\TelegramUpdateService'],
         ],
     ],
     'components' => [
@@ -38,6 +42,9 @@ $config = [
         ],
         'replicate' => [
             'class' => 'app\services\ReplicateService',
+        ],
+        'telegramService' => [
+            'class' => 'app\services\TelegramService',
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -71,6 +78,8 @@ $config = [
             'rules' => [
                 'admin' => 'admin/texture/index',
                 'telegram/webhook' => 'telegram/webhook/index',
+                'telegram/webapp' => 'telegram/webapp/index',
+                'telegram/webapp/upload' => 'telegram/webapp/upload',
             ],
         ],
     ],

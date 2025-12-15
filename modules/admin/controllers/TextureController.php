@@ -76,7 +76,8 @@ class TextureController extends Controller
     {
         $model = new Texture();
 
-        if ($this->request->isPost && $model->load($this->request->post())) {
+        $request = Yii::$app->request;
+        if ($request->isPost && $model->load($request->post())) {
             $imageFile = UploadedFile::getInstance($model, 'image_path');
             
             if ($this->textureService->createTexture($model, $imageFile)) {
@@ -100,7 +101,8 @@ class TextureController extends Controller
     {
         $model = $this->findModel($id);
 
-        if ($this->request->isPost && $model->load($this->request->post())) {
+        $request = Yii::$app->request;
+        if ($request->isPost && $model->load($request->post())) {
             $imageFile = UploadedFile::getInstance($model, 'image_path');
             
             if ($this->textureService->updateTexture($model, $imageFile)) {

@@ -27,6 +27,9 @@ $config = [
         'replicate' => [
             'class' => 'app\services\ReplicateService',
         ],
+        'telegramService' => [
+            'class' => 'app\services\TelegramService',
+        ],
         'log' => [
             'targets' => [
                 [

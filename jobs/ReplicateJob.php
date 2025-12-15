@@ -54,12 +54,16 @@ class ReplicateJob extends BaseObject implements JobInterface
                 $request->output_image_path = $outputPath;
                 $request->status = Request::STATUS_COMPLETED;
                 $request->save();
+
+                $this->notifyTelegramCompleted($request);
                 return;
             }
 
             if ($status === 'failed' || $status === 'canceled') {
                 $request->status = Request::STATUS_FAILED;
                 $request->save();
+
+                $this->notifyTelegramFailed($request);
                 return;
             }
 
@@ -67,6 +71,8 @@ class ReplicateJob extends BaseObject implements JobInterface
             if ($this->checkCount > $this->maxChecks) {
                 $request->status = Request::STATUS_FAILED;
                 $request->save();
+
+                $this->notifyTelegramFailed($request);
                 return;
             }
 
@@ -112,5 +118,35 @@ class ReplicateJob extends BaseObject implements JobInterface
         file_put_contents($absolutePath, $response->content);
 
         return 'uploads/requests/' . $fileName;
+    }
+
+    private function notifyTelegramCompleted(Request $request): void
+    {
+        try {
+            $chatId = (int)$request->user_id;
+            $caption = 'Готово. Request #' . $request->id;
+
+            if (!empty($request->output_image_path)) {
+                $absolute = Yii::getAlias('@webroot/') . $request->output_image_path;
+                if (is_file($absolute) && is_readable($absolute)) {
+                    Yii::$app->telegramService->sendPhoto($chatId, $absolute, $caption);
+                    return;
+                }
+            }
+
+            Yii::$app->telegramService->sendMessage($chatId, $caption);
+        } catch (\Throwable $e) {
+            Yii::warning($e, __METHOD__);
+        }
+    }
+
+    private function notifyTelegramFailed(Request $request): void
+    {
+        try {
+            $chatId = (int)$request->user_id;
+            Yii::$app->telegramService->sendMessage($chatId, 'Не удалось сгенерировать результат. Request #' . $request->id);
+        } catch (\Throwable $e) {
+            Yii::warning($e, __METHOD__);
+        }
     }
 }

@@ -25,41 +25,49 @@ class UploadAction extends Action
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
-        $userId = Yii::$app->request->post('user_id');
-        if ($userId === null || $userId === '') {
-            throw new BadRequestHttpException('user_id is required');
-        }
-
-        $textureId = Yii::$app->request->post('texture_id');
-        $textureId = ($textureId === null || $textureId === '') ? null : (int)$textureId;
-
-        $imageFile = UploadedFile::getInstanceByName('photo');
-        if ($imageFile === null) {
-            throw new BadRequestHttpException('photo file is required');
-        }
-
-        $replicateInput = [];
-
-        $mime = $imageFile->type ?: 'image/jpeg';
-        $content = @file_get_contents($imageFile->tempName);
-        if ($content === false) {
-            throw new InvalidArgumentException('Failed to read uploaded file');
-        }
-        $replicateInput['image'] = 'data:' . $mime . ';base64,' . base64_encode($content);
-
-        if ($textureId !== null) {
-            $texture = Texture::findOne($textureId);
-            if ($texture !== null) {
-                $replicateInput['prompt'] = $texture->prompt_suffix;
+        try {
+            $userId = Yii::$app->request->post('user_id');
+            if ($userId === null || $userId === '') {
+                throw new BadRequestHttpException('user_id is required');
             }
+
+            $textureId = Yii::$app->request->post('texture_id');
+            $textureId = ($textureId === null || $textureId === '') ? null : (int)$textureId;
+
+            $imageFile = UploadedFile::getInstanceByName('photo');
+            if ($imageFile === null) {
+                throw new BadRequestHttpException('photo file is required');
+            }
+
+            $replicateInput = [];
+
+            $mime = $imageFile->type ?: 'image/jpeg';
+            $content = @file_get_contents($imageFile->tempName);
+            if ($content === false) {
+                throw new InvalidArgumentException('Failed to read uploaded file');
+            }
+            $replicateInput['image'] = 'data:' . $mime . ';base64,' . base64_encode($content);
+
+            if ($textureId !== null) {
+                $texture = Texture::findOne($textureId);
+                if ($texture !== null) {
+                    $replicateInput['prompt'] = $texture->prompt_suffix;
+                }
+            }
+
+            $request = $this->requestService->createAndEnqueue($userId, $textureId, $imageFile, $replicateInput);
+
+            return [
+                'ok' => true,
+                'request_id' => $request->id,
+                'status' => $request->status,
+            ];
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+            return [
+                'ok' => false,
+                'message' => $e->getMessage(),
+            ];
         }
-
-        $request = $this->requestService->createAndEnqueue($userId, $textureId, $imageFile, $replicateInput);
-
-        return [
-            'ok' => true,
-            'request_id' => $request->id,
-            'status' => $request->status,
-        ];
     }
 }
