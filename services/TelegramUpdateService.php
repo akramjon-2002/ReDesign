@@ -48,12 +48,16 @@ class TelegramUpdateService
             throw new InvalidConfigException('telegram_webapp_url is not configured. Set TELEGRAM_WEBAPP_URL.');
         }
 
+        // Передаём user_id через query-параметр как fallback (Telegram не всегда передаёт user в initData)
+        $separator = (strpos($webappUrl, '?') === false) ? '?' : '&';
+        $webappUrlWithUser = $webappUrl . $separator . 'user_id=' . $chatId;
+
         $replyMarkup = [
             'keyboard' => [
                 [
                     [
                         'text' => 'Open WebApp',
-                        'web_app' => ['url' => $webappUrl],
+                        'web_app' => ['url' => $webappUrlWithUser],
                     ],
                 ],
             ],

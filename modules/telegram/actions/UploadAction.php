@@ -6,7 +6,6 @@ use app\models\Texture;
 use app\services\RequestService;
 use Yii;
 use yii\base\Action;
-use yii\base\InvalidArgumentException;
 use yii\web\BadRequestHttpException;
 use yii\web\Response;
 use yii\web\UploadedFile;
@@ -39,23 +38,28 @@ class UploadAction extends Action
                 throw new BadRequestHttpException('photo file is required');
             }
 
-            $replicateInput = [];
-
-            $mime = $imageFile->type ?: 'image/jpeg';
-            $content = @file_get_contents($imageFile->tempName);
-            if ($content === false) {
-                throw new InvalidArgumentException('Failed to read uploaded file');
-            }
-            $replicateInput['image'] = 'data:' . $mime . ';base64,' . base64_encode($content);
-
+            $texturePrompt = '';
             if ($textureId !== null) {
                 $texture = Texture::findOne($textureId);
-                if ($texture !== null) {
-                    $replicateInput['prompt'] = $texture->prompt_suffix;
+                if ($texture !== null && !empty($texture->prompt_suffix)) {
+                    $texturePrompt = $texture->prompt_suffix;
                 }
             }
 
-            $request = $this->requestService->createAndEnqueue($userId, $textureId, $imageFile, $replicateInput);
+            if ($texturePrompt === '') {
+                $texturePrompt = 'wallpaper texture';
+            }
+
+            $prompt = "{$texturePrompt}, photorealistic, high quality, same lighting";
+
+            Yii::info([
+                'action' => 'upload_for_stability',
+                'user_id' => $userId,
+                'texture_id' => $textureId,
+                'prompt' => $prompt,
+            ], __METHOD__);
+
+            $request = $this->requestService->createAndEnqueueStability($userId, $textureId, $imageFile, $prompt, 'wall');
 
             return [
                 'ok' => true,

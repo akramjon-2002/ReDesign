@@ -2,23 +2,32 @@
 
 namespace app\services;
 
-use app\jobs\ReplicateJob;
+use app\jobs\StabilityJob;
 use app\models\Request;
 use Yii;
-use yii\base\InvalidArgumentException;
 use yii\helpers\FileHelper;
 use yii\web\UploadedFile;
 
 class RequestService
 {
-    public function createAndEnqueue($userId, ?int $textureId, UploadedFile $imageFile, array $replicateInput = [], ?string $versionId = null): Request
+    /**
+     * Create request and enqueue Stability AI job for image editing
+     *
+     * @param int|string $userId User/Chat ID
+     * @param int|null $textureId Texture ID (optional)
+     * @param UploadedFile $imageFile Uploaded image file
+     * @param string $prompt Text prompt for Stability AI
+     * @param string $searchPrompt What to search/replace (default: wall)
+     * @return Request
+     */
+    public function createAndEnqueueStability($userId, ?int $textureId, UploadedFile $imageFile, string $prompt, string $searchPrompt = 'wall'): Request
     {
-        if ($versionId === null) {
-            $versionId = Yii::$app->params['replicate_model_version'] ?? null;
-        }
-        if (empty($versionId)) {
-            throw new InvalidArgumentException('Replicate model version is not configured. Set params[replicate_model_version] or pass $versionId.');
-        }
+        Yii::info([
+            'action' => 'create_stability_request',
+            'user_id' => $userId,
+            'texture_id' => $textureId,
+            'prompt' => mb_substr($prompt, 0, 100),
+        ], __METHOD__);
 
         $transaction = Yii::$app->db->beginTransaction();
         try {
@@ -41,10 +50,11 @@ class RequestService
                 throw new \RuntimeException('Failed to create request: ' . json_encode($request->getFirstErrors()));
             }
 
-            Yii::$app->queue->push(new ReplicateJob([
+            Yii::$app->queue->push(new StabilityJob([
                 'requestId' => $request->id,
-                'versionId' => $versionId,
-                'input' => $replicateInput,
+                'prompt' => $prompt,
+                'searchPrompt' => $searchPrompt,
+                'mode' => 'search-and-replace',
             ]));
 
             $transaction->commit();

@@ -12,6 +12,7 @@ $config = [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
         '@tests' => '@app/tests',
+        '@webroot' => '@app/web',
     ],
     'components' => [
         'cache' => [
@@ -31,10 +32,18 @@ $config = [
             'class' => 'app\services\TelegramService',
         ],
         'log' => [
+            'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                    'logFile' => '@runtime/logs/errors/' . date('Y-m-d') . '.log',
+                ],
+                [
+                    'class' => 'yii\log\FileTarget',
+                    'levels' => ['info', 'trace'],
+                    'logFile' => '@runtime/logs/info/' . date('Y-m-d') . '.log',
+                    'categories' => ['app\jobs\*', 'app\services\*'],
                 ],
             ],
         ],

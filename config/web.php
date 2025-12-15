@@ -50,8 +50,8 @@ $config = [
             'channel' => 'default', // Queue channel key
             'mutex' => \yii\mutex\PgsqlMutex::class, // Mutex used to sync queries
         ],
-        'replicate' => [
-            'class' => 'app\services\ReplicateService',
+        'stability' => [
+            'class' => 'app\services\StabilityService',
         ],
         'telegramService' => [
             'class' => 'app\services\TelegramService',
@@ -78,6 +78,13 @@ $config = [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                    'logFile' => '@runtime/logs/errors/' . date('Y-m-d') . '.log',
+                ],
+                [
+                    'class' => 'yii\log\FileTarget',
+                    'levels' => ['info', 'trace'],
+                    'logFile' => '@runtime/logs/info/' . date('Y-m-d') . '.log',
+                    'categories' => ['app\jobs\*', 'app\services\*', 'app\modules\*'],
                 ],
             ],
         ],
