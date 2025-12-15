@@ -6,15 +6,38 @@ $db = require __DIR__ . '/db.php';
 $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
-    'bootstrap' => ['log'],
-    'aliases' => [
-        '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+    'modules' => [
+        'admin' => [
+            'class' => 'app\modules\admin\Module',
+        ],
+        'telegram' => [
+            'class' => 'app\modules\telegram\Module',
+        ],
+    ],
+    'bootstrap' => ['log', 'queue'],
+    'container' => [
+        'singletons' => [
+            'app\services\TextureService' => ['app\services\TextureService'],
+            'app\services\RequestService' => ['app\services\RequestService'],
+        ],
     ],
     'components' => [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '5L8uJrSa_dmIPMEOSu4t2VhAp42icaK2',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
+        ],
+        'queue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'db' => 'db', // DB connection component or its config
+            'tableName' => '{{%queue}}', // Table name
+            'channel' => 'default', // Queue channel key
+            'mutex' => \yii\mutex\PgsqlMutex::class, // Mutex used to sync queries
+        ],
+        'replicate' => [
+            'class' => 'app\services\ReplicateService',
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -42,14 +65,14 @@ $config = [
             ],
         ],
         'db' => $db,
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                'admin' => 'admin/texture/index',
+                'telegram/webhook' => 'telegram/webhook/index',
             ],
         ],
-        */
     ],
     'params' => $params,
 ];

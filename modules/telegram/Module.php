@@ -1,0 +1,22 @@
+<?php
+
+namespace app\modules\telegram;
+
+/**
+ * telegram module definition class
+ */
+class Module extends \yii\base\Module
+{
+    /**
+     * {@inheritdoc}
+     */
+    public $controllerNamespace = 'app\modules\telegram\controllers';
+
+    /**
+     * {@inheritdoc}
+     */
+    public function init()
+    {
+        parent::init();
+    }
+}

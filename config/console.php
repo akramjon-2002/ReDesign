@@ -17,6 +17,16 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
+        'queue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'db' => 'db',
+            'tableName' => '{{%queue}}',
+            'channel' => 'default',
+            'mutex' => \yii\mutex\PgsqlMutex::class,
+        ],
+        'replicate' => [
+            'class' => 'app\services\ReplicateService',
+        ],
         'log' => [
             'targets' => [
                 [
