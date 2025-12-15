@@ -6,6 +6,10 @@ $db = require __DIR__ . '/db.php';
 $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
+    'aliases' => [
+        '@bower' => '@vendor/bower-asset',
+        '@npm' => '@vendor/npm-asset',
+    ],
     'modules' => [
         'admin' => [
             'class' => 'app\modules\admin\Module',
@@ -17,12 +21,18 @@ $config = [
     'bootstrap' => ['log', 'queue'],
     'container' => [
         'singletons' => [
-            'app\services\TextureService' => ['app\services\TextureService'],
-            'app\services\RequestService' => ['app\services\RequestService'],
-            'app\services\TelegramService' => function () {
-                return Yii::$app->telegramService;
-            },
-            'app\services\TelegramUpdateService' => ['app\services\TelegramUpdateService'],
+            'app\services\TextureService' => [
+                'class' => 'app\services\TextureService',
+            ],
+            'app\services\RequestService' => [
+                'class' => 'app\services\RequestService',
+            ],
+            'app\services\TelegramService' => [
+                'class' => 'app\services\TelegramService',
+            ],
+            'app\services\TelegramUpdateService' => [
+                'class' => 'app\services\TelegramUpdateService',
+            ],
         ],
     ],
     'components' => [

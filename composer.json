@@ -20,7 +20,8 @@
         "yiisoft/yii2-symfonymailer": "~2.0.3",
         "irazasyed/telegram-bot-sdk": "^3.15",
         "yiisoft/yii2-queue": "^2.3",
-        "yiisoft/yii2-httpclient": "^2.0"
+        "yiisoft/yii2-httpclient": "^2.0",
+        "bower-asset/jquery": "^3.7"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
