@@ -25,8 +25,8 @@ $config = [
             'channel' => 'default',
             'mutex' => \yii\mutex\PgsqlMutex::class,
         ],
-        'replicate' => [
-            'class' => 'app\services\ReplicateService',
+        'stability' => [
+            'class' => 'app\services\StabilityService',
         ],
         'telegramService' => [
             'class' => 'app\services\TelegramService',

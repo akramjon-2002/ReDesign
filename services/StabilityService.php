@@ -97,11 +97,12 @@ class StabilityService extends Component
      * @param string $imagePath Path to source image
      * @param string $prompt Text prompt describing what to put in masked area
      * @param string|null $maskPath Path to mask image (white = edit area)
+     * @param string|null $negativePrompt What must NOT appear in result
      * @param string $outputFormat Output format
      * @return array ['success' => bool, 'image_data' => string (binary), 'error' => string]
      * @throws Exception
      */
-    public function inpaint(string $imagePath, string $prompt, ?string $maskPath = null, string $outputFormat = 'png'): array
+    public function inpaint(string $imagePath, string $prompt, ?string $maskPath = null, ?string $negativePrompt = null, string $outputFormat = 'png'): array
     {
         $url = "{$this->baseUrl}/stable-image/edit/inpaint";
 
@@ -115,6 +116,10 @@ class StabilityService extends Component
             'output_format' => $outputFormat,
         ];
 
+        if (is_string($negativePrompt) && $negativePrompt !== '') {
+            $postFields['negative_prompt'] = $negativePrompt;
+        }
+
         if ($maskPath !== null && is_file($maskPath)) {
             $postFields['mask'] = new \CURLFile($maskPath);
         }
@@ -125,7 +130,13 @@ class StabilityService extends Component
             'has_mask' => $maskPath !== null,
         ], __METHOD__);
 
-        return $this->sendRequest($url, $postFields, true);
+        $result = $this->sendRequest($url, $postFields, true);
+        if (!$result['success'] && isset($postFields['negative_prompt']) && $this->isLikelyUnknownFieldError($result['error'] ?? '', 'negative_prompt')) {
+            unset($postFields['negative_prompt']);
+            $result = $this->sendRequest($url, $postFields, true);
+        }
+
+        return $result;
     }
 
     /**
@@ -134,11 +145,12 @@ class StabilityService extends Component
      * @param string $imagePath Path to source image
      * @param string $prompt What to replace with
      * @param string $searchPrompt What to search for
+     * @param string|null $negativePrompt What must NOT appear in result
      * @param string $outputFormat Output format
      * @return array ['success' => bool, 'image_data' => string (binary), 'error' => string]
      * @throws Exception
      */
-    public function searchAndReplace(string $imagePath, string $prompt, string $searchPrompt, string $outputFormat = 'png'): array
+    public function searchAndReplace(string $imagePath, string $prompt, string $searchPrompt, ?string $negativePrompt = null, string $outputFormat = 'png'): array
     {
         $url = "{$this->baseUrl}/stable-image/edit/search-and-replace";
 
@@ -153,13 +165,35 @@ class StabilityService extends Component
             'output_format' => $outputFormat,
         ];
 
+        if (is_string($negativePrompt) && $negativePrompt !== '') {
+            $postFields['negative_prompt'] = $negativePrompt;
+        }
+
         Yii::info([
             'action' => 'stability_search_replace',
             'prompt' => mb_substr($prompt, 0, 100),
             'search_prompt' => mb_substr($searchPrompt, 0, 50),
         ], __METHOD__);
 
-        return $this->sendRequest($url, $postFields, true);
+        $result = $this->sendRequest($url, $postFields, true);
+        if (!$result['success'] && isset($postFields['negative_prompt']) && $this->isLikelyUnknownFieldError($result['error'] ?? '', 'negative_prompt')) {
+            unset($postFields['negative_prompt']);
+            $result = $this->sendRequest($url, $postFields, true);
+        }
+
+        return $result;
+    }
+
+    protected function isLikelyUnknownFieldError(string $error, string $fieldName): bool
+    {
+        $e = strtolower($error);
+        $f = strtolower($fieldName);
+
+        if ($e === '' || $f === '') {
+            return false;
+        }
+
+        return (str_contains($e, $f) && (str_contains($e, 'unknown') || str_contains($e, 'additional') || str_contains($e, 'invalid') || str_contains($e, 'not allowed')));
     }
 
     /**
@@ -223,6 +257,16 @@ class StabilityService extends Component
             CURLOPT_TIMEOUT => 180,
         ]);
 
+        Yii::info([
+            'action' => 'stability_http_request',
+            'url' => $url,
+            'multipart' => $isMultipart,
+            'fields' => array_values(array_keys($postFields)),
+            'has_image' => isset($postFields['image']) && $postFields['image'] instanceof \CURLFile,
+            'has_mask' => isset($postFields['mask']) && $postFields['mask'] instanceof \CURLFile,
+            'has_negative' => isset($postFields['negative_prompt']),
+        ], __METHOD__);
+
         $resp = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
@@ -249,10 +293,11 @@ class StabilityService extends Component
                 'action' => 'stability_success',
                 'http_code' => $httpCode,
                 'image_size' => strlen($resp),
+                'content_type' => $contentType,
             ], __METHOD__);
         } else {
-            $errorData = json_decode($resp, true);
-            $errorMessage = $errorData['message'] ?? $errorData['name'] ?? $resp;
+            $data = json_decode($resp, true);
+            $errorMessage = $data['message'] ?? $data['name'] ?? $resp;
             
             $result['error'] = "Stability API error ($httpCode): $errorMessage";
             
@@ -261,6 +306,7 @@ class StabilityService extends Component
                 'http_code' => $httpCode,
                 'error' => $errorMessage,
                 'response' => mb_substr($resp, 0, 500),
+                'content_type' => $contentType,
             ], __METHOD__);
         }
 

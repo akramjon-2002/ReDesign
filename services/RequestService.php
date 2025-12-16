@@ -18,15 +18,17 @@ class RequestService
      * @param UploadedFile $imageFile Uploaded image file
      * @param string $prompt Text prompt for Stability AI
      * @param string $searchPrompt What to search/replace (default: wall)
+     * @param string $mode Processing mode
      * @return Request
      */
-    public function createAndEnqueueStability($userId, ?int $textureId, UploadedFile $imageFile, string $prompt, string $searchPrompt = 'wall'): Request
+    public function createAndEnqueueStability($userId, ?int $textureId, UploadedFile $imageFile, string $prompt, string $searchPrompt = 'wall', string $mode = 'auto-wall-inpaint'): Request
     {
         Yii::info([
             'action' => 'create_stability_request',
             'user_id' => $userId,
             'texture_id' => $textureId,
             'prompt' => mb_substr($prompt, 0, 100),
+            'mode' => $mode,
         ], __METHOD__);
 
         $transaction = Yii::$app->db->beginTransaction();
@@ -40,6 +42,13 @@ class RequestService
                 throw new \RuntimeException('Failed to save input image.');
             }
 
+            Yii::info([
+                'step' => 'request_image_saved',
+                'absolute_path' => $absolutePath,
+                'relative_path' => 'uploads/requests/' . $fileName,
+                'file_size' => is_file($absolutePath) ? filesize($absolutePath) : null,
+            ], __METHOD__);
+
             $request = new Request();
             $request->user_id = $userId;
             $request->texture_id = $textureId;
@@ -50,12 +59,25 @@ class RequestService
                 throw new \RuntimeException('Failed to create request: ' . json_encode($request->getFirstErrors()));
             }
 
+            Yii::info([
+                'step' => 'request_created',
+                'request_id' => $request->id,
+                'status' => $request->status,
+            ], __METHOD__);
+
             Yii::$app->queue->push(new StabilityJob([
                 'requestId' => $request->id,
                 'prompt' => $prompt,
                 'searchPrompt' => $searchPrompt,
-                'mode' => 'search-and-replace',
+                'mode' => $mode,
             ]));
+
+            Yii::info([
+                'step' => 'job_enqueued',
+                'request_id' => $request->id,
+                'mode' => $mode,
+                'search_prompt' => $searchPrompt,
+            ], __METHOD__);
 
             $transaction->commit();
             return $request;
