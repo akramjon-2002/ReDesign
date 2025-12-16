@@ -11,13 +11,15 @@ use yii\db\ActiveRecord;
  * @property int $id
  * @property int $user_id
  * @property int|null $texture_id
+ * @property int|null $color_id
+ * @property string|null $color_hex
  * @property string|null $input_image_path
  * @property string|null $output_image_path
- * @property string|null $replicate_id
  * @property string|null $status
  * @property string $created_at
  *
  * @property Texture $texture
+ * @property Color $color
  */
 class Request extends ActiveRecord
 {
@@ -41,10 +43,12 @@ class Request extends ActiveRecord
     {
         return [
             [['user_id'], 'required'],
-            [['user_id', 'texture_id'], 'integer'],
+            [['user_id', 'texture_id', 'color_id'], 'integer'],
             [['created_at'], 'safe'],
-            [['input_image_path', 'output_image_path', 'replicate_id', 'status'], 'string', 'max' => 255],
+            [['input_image_path', 'output_image_path', 'status'], 'string', 'max' => 255],
+            [['color_hex'], 'string', 'max' => 7],
             [['texture_id'], 'exist', 'skipOnError' => true, 'targetClass' => Texture::class, 'targetAttribute' => ['texture_id' => 'id']],
+            [['color_id'], 'exist', 'skipOnError' => true, 'targetClass' => Color::class, 'targetAttribute' => ['color_id' => 'id']],
         ];
     }
 
@@ -56,10 +60,11 @@ class Request extends ActiveRecord
         return [
             'id' => 'ID',
             'user_id' => 'User ID',
-            'texture_id' => 'Texture ID',
+            'texture_id' => 'Texture',
+            'color_id' => 'Color',
+            'color_hex' => 'Custom Color',
             'input_image_path' => 'Input Image',
             'output_image_path' => 'Output Image',
-            'replicate_id' => 'Replicate ID',
             'status' => 'Status',
             'created_at' => 'Created At',
         ];
@@ -73,5 +78,15 @@ class Request extends ActiveRecord
     public function getTexture()
     {
         return $this->hasOne(Texture::class, ['id' => 'texture_id']);
+    }
+
+    /**
+     * Gets query for [[Color]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getColor()
+    {
+        return $this->hasOne(Color::class, ['id' => 'color_id']);
     }
 }

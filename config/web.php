@@ -50,8 +50,8 @@ $config = [
             'channel' => 'default', // Queue channel key
             'mutex' => \yii\mutex\PgsqlMutex::class, // Mutex used to sync queries
         ],
-        'stability' => [
-            'class' => 'app\services\StabilityService',
+        'gemini' => [
+            'class' => 'app\services\GeminiService',
         ],
         'telegramService' => [
             'class' => 'app\services\TelegramService',

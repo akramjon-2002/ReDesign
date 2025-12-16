@@ -2,7 +2,7 @@
 
 namespace app\services;
 
-use app\jobs\StabilityJob;
+use app\jobs\GeminiJob;
 use app\models\Request;
 use Yii;
 use yii\helpers\FileHelper;
@@ -11,24 +11,21 @@ use yii\web\UploadedFile;
 class RequestService
 {
     /**
-     * Create request and enqueue Stability AI job for image editing
+     * Create request and enqueue Gemini job for image editing
      *
      * @param int|string $userId User/Chat ID
      * @param int|null $textureId Texture ID (optional)
      * @param UploadedFile $imageFile Uploaded image file
-     * @param string $prompt Text prompt for Stability AI
-     * @param string $searchPrompt What to search/replace (default: wall)
-     * @param string $mode Processing mode
+     * @param string|null $color HEX color (optional)
      * @return Request
      */
-    public function createAndEnqueueStability($userId, ?int $textureId, UploadedFile $imageFile, string $prompt, string $searchPrompt = 'wall', string $mode = 'auto-wall-inpaint'): Request
+    public function createAndEnqueueGemini($userId, ?int $textureId, UploadedFile $imageFile, ?string $color = null): Request
     {
         Yii::info([
-            'action' => 'create_stability_request',
+            'action' => 'create_gemini_request',
             'user_id' => $userId,
             'texture_id' => $textureId,
-            'prompt' => mb_substr($prompt, 0, 100),
-            'mode' => $mode,
+            'color' => $color,
         ], __METHOD__);
 
         $transaction = Yii::$app->db->beginTransaction();
@@ -52,6 +49,7 @@ class RequestService
             $request = new Request();
             $request->user_id = $userId;
             $request->texture_id = $textureId;
+            $request->color_hex = $color;
             $request->input_image_path = 'uploads/requests/' . $fileName;
             $request->status = Request::STATUS_NEW;
 
@@ -65,18 +63,17 @@ class RequestService
                 'status' => $request->status,
             ], __METHOD__);
 
-            Yii::$app->queue->push(new StabilityJob([
+            Yii::$app->queue->push(new GeminiJob([
                 'requestId' => $request->id,
-                'prompt' => $prompt,
-                'searchPrompt' => $searchPrompt,
-                'mode' => $mode,
+                'textureId' => $textureId,
+                'color' => $color,
             ]));
 
             Yii::info([
                 'step' => 'job_enqueued',
                 'request_id' => $request->id,
-                'mode' => $mode,
-                'search_prompt' => $searchPrompt,
+                'texture_id' => $textureId,
+                'color' => $color,
             ], __METHOD__);
 
             $transaction->commit();

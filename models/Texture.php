@@ -10,8 +10,8 @@ use yii\db\ActiveRecord;
  *
  * @property int $id
  * @property string $title
- * @property string $prompt_suffix
- * @property string|null $image_path
+ * @property string|null $prompt_suffix
+ * @property string $image_path
  * @property string|null $type
  * @property string $created_at
  *
@@ -33,7 +33,10 @@ class Texture extends ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'prompt_suffix'], 'required'],
+            [['title'], 'required'],
+            [['image_path'], 'required', 'when' => function ($model) {
+                return $model->isNewRecord;
+            }, 'whenClient' => "function (attribute, value) { return true; }", 'message' => 'Image is required'],
             [['created_at'], 'safe'],
             [['title', 'prompt_suffix', 'image_path', 'type'], 'string', 'max' => 255],
         ];
@@ -47,8 +50,8 @@ class Texture extends ActiveRecord
         return [
             'id' => 'ID',
             'title' => 'Title',
-            'prompt_suffix' => 'Prompt Suffix', // e.g. " in marble style"
-            'image_path' => 'Preview Image',
+            'prompt_suffix' => 'Prompt Suffix (optional)',
+            'image_path' => 'Texture Image',
             'type' => 'Type',
             'created_at' => 'Created At',
         ];

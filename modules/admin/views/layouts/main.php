@@ -35,8 +35,9 @@ $this->registerMetaTag(['name' => 'viewport', 'content' => 'width=device-width, 
             <?php
             $route = Yii::$app->controller->route;
             $isTexture = strpos($route, 'admin/texture') === 0;
+            $isColor = strpos($route, 'admin/color') === 0;
             echo Html::a('Textures', ['/admin/texture/index'], ['class' => 'px-2 py-2 rounded ' . ($isTexture ? 'active' : '')]);
-            echo Html::a('WebApp', ['/telegram/webapp/index'], ['class' => 'px-2 py-2 rounded']);
+            echo Html::a('Colors', ['/admin/color/index'], ['class' => 'px-2 py-2 rounded ' . ($isColor ? 'active' : '')]);
             ?>
         </div>
     </aside>

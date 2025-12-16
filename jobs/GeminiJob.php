@@ -1,0 +1,170 @@
+<?php
+
+namespace app\jobs;
+
+use app\models\Request;
+use app\models\Texture;
+use Yii;
+use yii\base\BaseObject;
+use yii\helpers\FileHelper;
+use yii\queue\JobInterface;
+
+class GeminiJob extends BaseObject implements JobInterface
+{
+    public int $requestId;
+    public string $prompt = '';
+    public ?string $color = null;
+    public ?int $textureId = null;
+
+    public function execute($queue)
+    {
+        $request = Request::findOne($this->requestId);
+        if ($request === null) {
+            Yii::warning("Request #{$this->requestId} not found", __METHOD__);
+            return;
+        }
+
+        if ($request->status === Request::STATUS_COMPLETED || $request->status === Request::STATUS_FAILED) {
+            return;
+        }
+
+        try {
+            $request->status = Request::STATUS_PROCESSING;
+            if (!$request->save()) {
+                throw new \RuntimeException('Failed to update request status: ' . json_encode($request->getFirstErrors()));
+            }
+
+            $inputImagePath = Yii::getAlias('@webroot/') . $request->input_image_path;
+            if (!is_file($inputImagePath) || !is_readable($inputImagePath)) {
+                throw new \RuntimeException("Input image not found: {$inputImagePath}");
+            }
+
+            $textureImagePath = null;
+            if ($this->textureId !== null) {
+                $texture = Texture::findOne($this->textureId);
+                if ($texture !== null && !empty($texture->image_path)) {
+                    $textureImagePath = Yii::getAlias('@webroot/') . $texture->image_path;
+                    if (!is_file($textureImagePath) || !is_readable($textureImagePath)) {
+                        $textureImagePath = null;
+                    }
+                }
+            }
+
+            $prompt = $this->buildPrompt($textureImagePath);
+
+            Yii::info([
+                'action' => 'gemini_job_start',
+                'request_id' => $this->requestId,
+                'color' => $this->color,
+                'texture_id' => $this->textureId,
+                'has_texture_image' => $textureImagePath !== null,
+                'prompt' => mb_substr($prompt, 0, 150),
+            ], __METHOD__);
+
+            $geminiAvailable = Yii::$app->has('gemini') && Yii::$app->gemini->isAvailable();
+            if (!$geminiAvailable) {
+                throw new \RuntimeException('Gemini is not configured');
+            }
+
+            $result = Yii::$app->gemini->editImage(
+                $inputImagePath,
+                $prompt,
+                $textureImagePath,
+                null,
+                ['responseModalities' => ['Image']]
+            );
+
+            if (($result['success'] ?? false) && !empty($result['image_data'])) {
+                $outputDir = Yii::getAlias('@webroot/uploads/requests');
+                FileHelper::createDirectory($outputDir);
+
+                $fileName = Yii::$app->gemini->saveImage(
+                    $result['image_data'],
+                    $outputDir,
+                    'out_' . $request->id . '_',
+                    $result['content_type'] ?? 'image/png'
+                );
+
+                $request->output_image_path = 'uploads/requests/' . $fileName;
+                $request->status = Request::STATUS_COMPLETED;
+                $request->save();
+
+                Yii::info([
+                    'action' => 'gemini_job_completed',
+                    'request_id' => $this->requestId,
+                    'output_path' => $request->output_image_path,
+                ], __METHOD__);
+
+                $this->notifyTelegramCompleted($request);
+            } else {
+                throw new \RuntimeException('Gemini did not return image: ' . ($result['error'] ?? 'unknown error'));
+            }
+        } catch (\Throwable $e) {
+            Yii::error([
+                'action' => 'gemini_job_failed',
+                'request_id' => $this->requestId,
+                'error' => $e->getMessage(),
+            ], __METHOD__);
+
+            $request->status = Request::STATUS_FAILED;
+            $request->save();
+
+            $this->notifyTelegramFailed($request);
+            throw $e;
+        }
+    }
+
+    private function buildPrompt(?string $textureImagePath): string
+    {
+        $hasColor = is_string($this->color) && $this->color !== '';
+        $hasTexture = $textureImagePath !== null;
+
+        $base = "Photorealistic interior photo edit. ";
+
+        if ($hasTexture && $hasColor) {
+            $base .= "Apply the texture/pattern from the second image to ALL wall surfaces, and tint it with color {$this->color}. ";
+        } elseif ($hasTexture) {
+            $base .= "Apply the texture/pattern from the second image to ALL wall surfaces. Match the color and pattern exactly. ";
+        } elseif ($hasColor) {
+            $base .= "Paint ALL wall surfaces with solid color {$this->color}. ";
+        } else {
+            $base .= "Repaint ALL wall surfaces. ";
+        }
+
+        $base .= "Keep all doors, windows, furniture, floor, ceiling, moldings, trims and decorations exactly as original. ";
+        $base .= "Keep geometry, perspective, camera position and lighting unchanged. ";
+        $base .= "Do NOT add new doors/windows, do NOT add/remove/move furniture, do NOT change room layout or structure.";
+
+        return $base;
+    }
+
+    private function notifyTelegramCompleted(Request $request): void
+    {
+        try {
+            $chatId = (int)$request->user_id;
+            $caption = '✅ Готово! Request #' . $request->id;
+
+            if (!empty($request->output_image_path)) {
+                $absolute = Yii::getAlias('@webroot/') . $request->output_image_path;
+                if (is_file($absolute) && is_readable($absolute)) {
+                    Yii::$app->telegramService->sendPhoto($chatId, $absolute, $caption);
+                    return;
+                }
+            }
+
+            Yii::$app->telegramService->sendMessage($chatId, $caption);
+        } catch (\Throwable $e) {
+            Yii::warning($e, __METHOD__);
+        }
+    }
+
+    private function notifyTelegramFailed(Request $request): void
+    {
+        try {
+            $chatId = (int)$request->user_id;
+            Yii::$app->telegramService->sendMessage($chatId, '❌ Не удалось сгенерировать результат. Request #' . $request->id);
+        } catch (\Throwable $e) {
+            Yii::warning($e, __METHOD__);
+        }
+    }
+}
