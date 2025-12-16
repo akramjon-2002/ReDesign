@@ -13,8 +13,8 @@ class StabilityJob extends BaseObject implements JobInterface
     public int $requestId;
     public string $prompt;
     public string $mode = 'auto-wall-inpaint';
-    public string $searchPrompt = 'interior wall surface';
-    public string $negativePrompt = 'poster, frame, picture, painting, portrait, artwork, photo on wall, mural, graffiti, text, letters, logo, person, face, character, tv, screen, monitor';
+    public string $searchPrompt = 'wall, walls, all wall surfaces, interior walls';
+    public string $negativePrompt = 'poster, frame, picture, painting, portrait, artwork, photo on wall, mural, graffiti, text, letters, logo, person, face, character, tv, screen, monitor, sofa, couch, furniture, table, chair, plant, vase, lamp, decoration, rug, carpet, bookshelf, bed, wardrobe, curtains';
 
     public function execute($queue)
     {
@@ -111,14 +111,30 @@ class StabilityJob extends BaseObject implements JobInterface
             'request_id' => $this->requestId,
         ], __METHOD__);
 
-        $maskPath = $this->buildAutoWallMask($inputImagePath);
+        $maskInfo = $this->buildAutoWallMaskWithRatio($inputImagePath);
+        $maskPath = $maskInfo['path'] ?? null;
+        $filledRatio = $maskInfo['filled_ratio'] ?? 0.0;
+
         if (is_string($maskPath) && $maskPath !== '' && is_file($maskPath)) {
             Yii::info([
                 'action' => 'auto_wall_mask_ready',
                 'request_id' => $this->requestId,
                 'mask_path' => $maskPath,
                 'mask_size' => filesize($maskPath) ?: null,
+                'filled_ratio' => $filledRatio,
             ], __METHOD__);
+
+            if ($filledRatio > 0.35) {
+                Yii::info([
+                    'action' => 'mask_too_large_use_search_replace',
+                    'request_id' => $this->requestId,
+                    'filled_ratio' => $filledRatio,
+                ], __METHOD__);
+                @unlink($maskPath);
+                $maskPath = null;
+                return Yii::$app->stability->searchAndReplace($inputImagePath, $this->prompt, $this->searchPrompt, $this->negativePrompt);
+            }
+
             return Yii::$app->stability->inpaint($inputImagePath, $this->prompt, $maskPath, $this->negativePrompt);
         }
 
@@ -133,23 +149,24 @@ class StabilityJob extends BaseObject implements JobInterface
     /**
      * Простая авто-маска стен (без нейросегментации): flood fill от нескольких seed-точек
      * в верхней части кадра. Белое = менять, чёрное = не менять.
+     * @return array{path: string|null, filled_ratio: float}
      */
-    private function buildAutoWallMask(string $imagePath): ?string
+    private function buildAutoWallMaskWithRatio(string $imagePath): array
     {
         if (!extension_loaded('gd') || !function_exists('imagecreatetruecolor') || !function_exists('imagecolorat')) {
-            return null;
+            return ['path' => null, 'filled_ratio' => 0.0];
         }
 
         $src = $this->gdLoadImage($imagePath);
         if (!$src) {
-            return null;
+            return ['path' => null, 'filled_ratio' => 0.0];
         }
 
         $w = imagesx($src);
         $h = imagesy($src);
         if ($w <= 0 || $h <= 0) {
             imagedestroy($src);
-            return null;
+            return ['path' => null, 'filled_ratio' => 0.0];
         }
 
         $scale = min(320 / $w, 320 / $h, 1.0);
@@ -186,7 +203,7 @@ class StabilityJob extends BaseObject implements JobInterface
         if (!$scored) {
             imagedestroy($img);
             imagedestroy($mask);
-            return null;
+            return ['path' => null, 'filled_ratio' => 0.0];
         }
 
         $seeds = [];
@@ -224,7 +241,7 @@ class StabilityJob extends BaseObject implements JobInterface
 
         if ($filled < 500) {
             imagedestroy($mask);
-            return null;
+            return ['path' => null, 'filled_ratio' => $filledRatio ?? 0.0];
         }
 
         Yii::info([
@@ -245,7 +262,7 @@ class StabilityJob extends BaseObject implements JobInterface
         imagepng($maskFull, $tmp);
         imagedestroy($maskFull);
 
-        return $tmp;
+        return ['path' => $tmp, 'filled_ratio' => $filledRatio ?? 0.0];
     }
 
     private function floodFillAppend($img, $mask, int $seedX, int $seedY, int $minY, int $maxY, float $maxDist, int $white): void

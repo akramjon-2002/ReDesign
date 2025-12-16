@@ -76,12 +76,7 @@ class UploadAction extends Action
                 $texturePrompt = trim($texturePrompt . ', ' . $autoDesc);
             }
 
-            $prompt = "Photorealistic interior photo edit. Change ONLY the wall surfaces (paint/wallpaper) to: {$texturePrompt}. " .
-                "Keep geometry, perspective, camera position and composition unchanged. " .
-                "Do NOT add, remove, move or change any objects (no posters, frames, TVs, paintings, decorations). " .
-                "Keep ceiling, floor, doors, windows, kitchen cabinets, appliances, table and all furniture exactly the same. " .
-                "Preserve original lighting, shadows and reflections. " .
-                "Respect boundaries: do not spill onto ceiling, floor, door frames, cabinets or appliances; keep clean edges along corners and trims.";
+            $prompt = "Repaint the walls to {$texturePrompt}. Keep the room layout exactly the same. Do not add or remove any furniture or objects. Preserve the original photo composition.";
 
             Yii::info([
                 'action' => 'upload_for_stability',
@@ -98,7 +93,7 @@ class UploadAction extends Action
                 $textureId,
                 $imageFile,
                 $prompt,
-                'interior wall surface',
+                'wall, walls, all wall surfaces, interior walls',
                 'auto-wall-inpaint'
             );
 
@@ -223,23 +218,53 @@ class UploadAction extends Action
 
     private function approxColorName(int $r, int $g, int $b): string
     {
+        $max = max($r, $g, $b);
+        $min = min($r, $g, $b);
+        $l = ($max + $min) / 2;
+        $s = ($max == $min) ? 0 : (($l > 127) ? ($max - $min) / (510 - $max - $min) : ($max - $min) / ($max + $min));
+
+        if ($r > $g + 40 && $r > $b + 40) {
+            if ($l < 80) return 'dark red, deep burgundy, maroon';
+            if ($l < 120) return 'rich red, deep red';
+            if ($l < 160) return 'red, medium red';
+            return 'light red, salmon';
+        }
+        if ($g > $r + 30 && $g > $b + 30) {
+            if ($l < 100) return 'dark green, forest green';
+            if ($l < 160) return 'green, medium green';
+            return 'light green, mint';
+        }
+        if ($b > $r + 30 && $b > $g + 30) {
+            if ($l < 100) return 'dark blue, navy blue';
+            if ($l < 160) return 'blue, medium blue';
+            return 'light blue, sky blue';
+        }
+        if ($r > 180 && $g > 150 && $b < 100) {
+            return 'orange, warm orange';
+        }
+        if ($r > 180 && $g > 180 && $b < 100) {
+            return 'yellow, warm yellow';
+        }
         if ($r > 210 && $g > 200 && $b > 190) {
-            return 'off-white';
+            return 'off-white, cream white';
         }
         if ($r > 190 && $g > 170 && $b > 130) {
-            return 'warm beige';
+            return 'warm beige, tan';
         }
         if ($r > 160 && $g > 150 && $b > 140) {
-            return 'light gray';
+            return 'light gray, silver gray';
         }
         if ($r > 120 && $g > 110 && $b > 90) {
-            return 'sand beige';
+            return 'sand beige, taupe';
         }
-        if ($r < 90 && $g < 90 && $b < 90) {
-            return 'dark gray';
+        if ($l < 50) {
+            return 'very dark, charcoal, almost black';
+        }
+        if ($l < 90) {
+            return 'dark gray, charcoal gray';
         }
 
-        return 'neutral color';
+        return 'neutral muted color';
     }
 
     private function gdLoadImage(string $path)
@@ -249,6 +274,7 @@ class UploadAction extends Action
             'png' => @imagecreatefrompng($path),
             'gif' => @imagecreatefromgif($path),
             'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($path) : null,
+            'avif' => function_exists('imagecreatefromavif') ? @imagecreatefromavif($path) : null,
             default => @imagecreatefromjpeg($path),
         };
     }
