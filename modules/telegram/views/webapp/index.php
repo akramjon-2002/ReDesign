@@ -72,6 +72,7 @@ $this->title = 'Interior Remodel';
   var userIdInput = document.getElementById('userId');
   var submitBtn = document.getElementById('submitBtn');
   var photoInput = document.getElementById('photo');
+  var maxPhotoBytes = 5 * 1024 * 1024;
   void photoInput;
 
   function getTelegramUserId() {
@@ -210,6 +211,13 @@ $this->title = 'Interior Remodel';
     if (!userIdInput || !userIdInput.value) {
       setStatus('Ошибка: не найден Telegram user id. Открой WebApp через кнопку /start в боте.');
       return;
+    }
+
+    if (photoInput && photoInput.files && photoInput.files[0]) {
+      if (photoInput.files[0].size > maxPhotoBytes) {
+        setStatus('Фото больше 5 МБ. Загрузите файл меньше.');
+        return;
+      }
     }
 
     setStatus('Uploading...');

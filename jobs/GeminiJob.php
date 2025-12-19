@@ -114,26 +114,45 @@ class GeminiJob extends BaseObject implements JobInterface
         }
     }
 
-    private function buildPrompt(?string $textureImagePath): string
+   private function buildPrompt(?string $textureImagePath): string
     {
         $hasColor = is_string($this->color) && $this->color !== '';
         $hasTexture = $textureImagePath !== null;
 
-        $base = "Photorealistic interior photo edit. ";
+        $base = "Professional interior wall refinishing. Apply new finish ONLY to vertical wall surfaces. ";
 
+        // Описание материала
         if ($hasTexture && $hasColor) {
-            $base .= "Apply the texture/pattern from the second image to ALL wall surfaces, and tint it with color {$this->color}. ";
+            $base .= "Use the texture pattern from reference image, tinted with {$this->color}. ";
         } elseif ($hasTexture) {
-            $base .= "Apply the texture/pattern from the second image to ALL wall surfaces. Match the color and pattern exactly. ";
+            $base .= "Match exact texture and color from reference image. ";
         } elseif ($hasColor) {
-            $base .= "Paint ALL wall surfaces with solid color {$this->color}. ";
+            $base .= "Apply solid color {$this->color}. ";
         } else {
-            $base .= "Repaint ALL wall surfaces. ";
+            $base .= "Apply neutral wall finish. ";
         }
 
-        $base .= "Keep all doors, windows, furniture, floor, ceiling, moldings, trims and decorations exactly as original. ";
-        $base .= "Keep geometry, perspective, camera position and lighting unchanged. ";
-        $base .= "Do NOT add new doors/windows, do NOT add/remove/move furniture, do NOT change room layout or structure.";
+        // Критичные ограничения
+        $base .= "STRICT BOUNDARIES: ";
+        $base .= "- Ceiling: keep 100% original, no finish applied ";
+        $base .= "- Crown molding/cornices: preserve completely, stop wall finish at bottom edge ";
+        $base .= "- Floor/baseboards: no changes ";
+        $base .= "- Windows/doors/frames: mask and preserve ";
+        $base .= "- Furniture/objects: do not alter ";
+        
+        // Зоны применения
+        $base .= "TARGET AREAS: ";
+        $base .= "- All exposed vertical wall sections from floor to ceiling junction ";
+        $base .= "- Wall strips above cabinets/furniture up to ceiling line ";
+        $base .= "- Wall sections behind/between furniture ";
+        $base .= "- Maintain wall perspective and depth ";
+        
+        // Качество
+        $base .= "QUALITY: ";
+        $base .= "- Preserve original lighting, shadows, reflections ";
+        $base .= "- Keep texture scale consistent with room perspective ";
+        $base .= "- Sharp clean edges at all boundaries ";
+        $base .= "- Photorealistic result matching original image quality.";
 
         return $base;
     }

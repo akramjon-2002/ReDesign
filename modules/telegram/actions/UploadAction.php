@@ -24,6 +24,7 @@ class UploadAction extends Action
         Yii::$app->response->format = Response::FORMAT_JSON;
 
         try {
+            $maxBytes = 5 * 1024 * 1024;
             $userId = Yii::$app->request->post('user_id');
             if ($userId === null || $userId === '') {
                 throw new BadRequestHttpException('user_id is required');
@@ -38,6 +39,21 @@ class UploadAction extends Action
             $imageFile = UploadedFile::getInstanceByName('photo');
             if ($imageFile === null) {
                 throw new BadRequestHttpException('photo file is required');
+            }
+
+            if ($imageFile->error !== UPLOAD_ERR_OK) {
+                if ($imageFile->error === UPLOAD_ERR_INI_SIZE || $imageFile->error === UPLOAD_ERR_FORM_SIZE) {
+                    $iniMax = ini_get('upload_max_filesize');
+                    $postMax = ini_get('post_max_size');
+                    throw new BadRequestHttpException(
+                        'Лимит загрузки на сервере. upload_max_filesize=' . $iniMax . ', post_max_size=' . $postMax . '.'
+                    );
+                }
+                throw new BadRequestHttpException('Ошибка загрузки файла (код: ' . $imageFile->error . ').');
+            }
+
+            if ($imageFile->size > $maxBytes) {
+                throw new BadRequestHttpException('Фото больше 5 МБ. Загрузите файл меньше.');
             }
 
             if ($textureId === null && $color === null) {
