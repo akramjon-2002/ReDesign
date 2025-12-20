@@ -245,8 +245,26 @@ $this->title = 'AI Wall Editor';
         <div class="loading-animation">
             <div class="loading-circle">
                 <div class="loading-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#00D9FF"/>
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                        <!-- Large star -->
+                        <path d="M30 10 L32.5 20 L42 22.5 L35 30 L37 40 L30 35 L23 40 L25 30 L18 22.5 L27.5 20 Z" fill="#00D9FF" opacity="0.9">
+                            <animateTransform attributeName="transform" type="rotate" from="0 30 30" to="360 30 30" dur="3s" repeatCount="indefinite"/>
+                        </path>
+                        <!-- Small star top right -->
+                        <path d="M45 15 L46 18 L49 19 L46.5 21.5 L47 25 L45 23 L43 25 L43.5 21.5 L41 19 L44 18 Z" fill="#00D9FF" opacity="0.7">
+                            <animateTransform attributeName="transform" type="rotate" from="0 45 20" to="360 45 20" dur="2s" repeatCount="indefinite"/>
+                        </path>
+                        <!-- Small star bottom left -->
+                        <path d="M15 42 L16 45 L19 46 L16.5 48.5 L17 52 L15 50 L13 52 L13.5 48.5 L11 46 L14 45 Z" fill="#00D9FF" opacity="0.6">
+                            <animateTransform attributeName="transform" type="rotate" from="0 15 47" to="360 15 47" dur="2.5s" repeatCount="indefinite"/>
+                        </path>
+                        <!-- Tiny sparkle -->
+                        <circle cx="48" cy="35" r="1.5" fill="#00D9FF" opacity="0.8">
+                            <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="12" cy="25" r="1.5" fill="#00D9FF" opacity="0.8">
+                            <animate attributeName="opacity" values="0.3;1;0.3" dur="1.8s" repeatCount="indefinite"/>
+                        </circle>
                     </svg>
                 </div>
             </div>
