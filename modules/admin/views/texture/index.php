@@ -8,7 +8,15 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <div class="texture-index">
-    <h1 class="h3 mb-3"><?= Html::encode($this->title) ?></h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3"><?= Html::encode($this->title) ?></h1>
+        <div>
+            <?= Html::a(Yii::t('app', 'Add Texture'), ['create'], [
+                'class' => 'btn btn-success',
+                'title' => Yii::t('app', 'Add New Texture')
+            ]) ?>
+        </div>
+    </div>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,

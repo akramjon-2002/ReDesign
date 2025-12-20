@@ -23,8 +23,9 @@ use yii\helpers\Html;
         </div>
     <?php endif; ?>
 
-    <div class="form-group">
+    <div class="form-group d-flex gap-2">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Save'), ['class' => 'btn btn-primary']) ?>
+        <?= Html::a(Yii::t('app', 'Cancel'), ['index'], ['class' => 'btn btn-outline-secondary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

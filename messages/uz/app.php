@@ -46,6 +46,9 @@ return [
     'Add Color' => 'Rang qo\'shish',
     'Edit Color' => 'Rangni tahrirlash',
     'Colors Management' => 'Ranglarni boshqarish',
+    'Add New Color' => 'Yangi rang qo\'shish',
+    'Add New Texture' => 'Yangi tekstura qo\'shish',
+    'Back to List' => 'Ro\'yxatga qaytish',
     
     // Admin
     'Admin Panel' => 'Boshqaruv Paneli',

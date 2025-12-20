@@ -7,11 +7,14 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Colors'), 'url' => [
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="color-create">
-
-    <h1><?= Html::encode($this->title) ?></h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><?= Html::encode($this->title) ?> <?= Yii::t('app', 'Color') ?></h1>
+        <div>
+            <?= Html::a(Yii::t('app', 'Back to List'), ['index'], ['class' => 'btn btn-secondary']) ?>
+        </div>
+    </div>
 
     <?= $this->render('_form', [
         'model' => $model,
     ]) ?>
-
 </div>

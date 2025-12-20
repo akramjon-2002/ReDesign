@@ -21,8 +21,9 @@ use yii\helpers\Html;
 
     <?= $form->field($model, 'sort_order')->textInput(['type' => 'number']) ?>
 
-    <div class="form-group">
+    <div class="form-group d-flex gap-2">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Save'), ['class' => 'btn btn-primary']) ?>
+        <?= Html::a(Yii::t('app', 'Cancel'), ['index'], ['class' => 'btn btn-outline-secondary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

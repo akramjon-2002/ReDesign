@@ -7,8 +7,19 @@ $this->title = Yii::t('app', 'Colors');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="color-index">
-
-    <h1><?= Html::encode($this->title) ?></h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><?= Html::encode($this->title) ?></h1>
+        <div>
+            <?= Html::a(Yii::t('app', 'Add Color'), ['create'], [
+                'class' => 'btn btn-success me-2',
+                'title' => Yii::t('app', 'Add New Color')
+            ]) ?>
+            <?= Html::a(Yii::t('app', 'Add Texture'), ['/admin/texture/create'], [
+                'class' => 'btn btn-primary',
+                'title' => Yii::t('app', 'Add New Texture')
+            ]) ?>
+        </div>
+    </div>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,

@@ -1,4 +1,8 @@
 RewriteEngine on
+RewriteBase /
+# Прямая раздача файлов из uploads
+RewriteRule ^uploads/ - [L]
+# Остальное в Yii2
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule . index.php [L]
