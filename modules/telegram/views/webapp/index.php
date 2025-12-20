@@ -676,8 +676,19 @@ function getTelegramUserId() {
 }
 
 function capturePhoto() {
-    var input = document.getElementById('cameraInput');
-    if (input) input.click();
+    // Попытка использовать Telegram WebApp API для камеры
+    if (window.Telegram && Telegram.WebApp) {
+        // Telegram WebApp не имеет прямого API для камеры,
+        // поэтому используем стандартный HTML5 input с capture
+        var input = document.getElementById('cameraInput');
+        if (input) {
+            input.click();
+        }
+    } else {
+        // Fallback для браузера
+        var input = document.getElementById('cameraInput');
+        if (input) input.click();
+    }
 }
 
 function selectFromGallery() {
