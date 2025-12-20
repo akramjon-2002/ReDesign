@@ -224,31 +224,22 @@ class GeminiJob extends BaseObject implements JobInterface
 
     private function notifyTelegramCompleted(Request $request): void
     {
-        try {
-            $chatId = (int)$request->user_id;
-            $caption = '✅ Готово! Request #' . $request->id;
-
-            if (!empty($request->output_image_path)) {
-                $absolute = Yii::getAlias('@webroot/') . $request->output_image_path;
-                if (is_file($absolute) && is_readable($absolute)) {
-                    Yii::$app->telegramService->sendPhoto($chatId, $absolute, $caption);
-                    return;
-                }
-            }
-
-            Yii::$app->telegramService->sendMessage($chatId, $caption);
-        } catch (\Throwable $e) {
-            Yii::warning($e, __METHOD__);
-        }
+        // Результат теперь показывается в WebView, не отправляем фото в бот
+        Yii::info([
+            'action' => 'request_completed_webview',
+            'request_id' => $request->id,
+            'user_id' => $request->user_id,
+            'output_path' => $request->output_image_path,
+        ], __METHOD__);
     }
 
     private function notifyTelegramFailed(Request $request): void
     {
-        try {
-            $chatId = (int)$request->user_id;
-            Yii::$app->telegramService->sendMessage($chatId, '❌ Не удалось сгенерировать результат. Request #' . $request->id);
-        } catch (\Throwable $e) {
-            Yii::warning($e, __METHOD__);
-        }
+        // Ошибка теперь показывается в WebView, не отправляем сообщение в бот
+        Yii::info([
+            'action' => 'request_failed_webview',
+            'request_id' => $request->id,
+            'user_id' => $request->user_id,
+        ], __METHOD__);
     }
 }
