@@ -39,6 +39,12 @@ class GeminiJob extends BaseObject implements JobInterface
                 throw new \RuntimeException("Input image not found: {$inputImagePath}");
             }
 
+            $inputSize = @getimagesize($inputImagePath);
+            if ($inputSize === false) {
+                throw new \RuntimeException('Failed to read input image size.');
+            }
+            [$inputWidth, $inputHeight] = $inputSize;
+
             $textureImagePath = null;
             if ($this->textureId !== null) {
                 $texture = Texture::findOne($this->textureId);
@@ -66,13 +72,25 @@ class GeminiJob extends BaseObject implements JobInterface
                 throw new \RuntimeException('Gemini is not configured');
             }
 
-            $result = Yii::$app->gemini->editImage(
-                $inputImagePath,
-                $prompt,
-                $textureImagePath,
-                null,
-                ['responseModalities' => ['Image']]
-            );
+            $resizedTexturePath = $textureImagePath !== null
+                ? $this->resizeTextureToOriginal($textureImagePath, $inputWidth, $inputHeight)
+                : null;
+
+            try {
+                $result = Yii::$app->gemini->editImage(
+                    $inputImagePath,
+                    $prompt,
+                    $resizedTexturePath,
+                    null,
+                    [
+                        'responseModalities' => ['Image'],
+                    ]
+                );
+            } finally {
+                if (is_string($resizedTexturePath) && $resizedTexturePath !== $textureImagePath && is_file($resizedTexturePath)) {
+                    @unlink($resizedTexturePath);
+                }
+            }
 
             if (($result['success'] ?? false) && !empty($result['image_data'])) {
                 $outputDir = Yii::getAlias('@webroot/uploads/requests');
@@ -114,7 +132,7 @@ class GeminiJob extends BaseObject implements JobInterface
         }
     }
 
-   private function buildPrompt(?string $textureImagePath): string
+    private function buildPrompt(?string $textureImagePath): string
     {
         $hasColor = is_string($this->color) && $this->color !== '';
         $hasTexture = $textureImagePath !== null;
@@ -134,6 +152,7 @@ class GeminiJob extends BaseObject implements JobInterface
 
         // Критичные ограничения
         $base .= "STRICT BOUNDARIES: ";
+        $base .= "- Keep exact original pixel dimensions (same width and height), no outpainting, no canvas expansion, no zoom ";
         $base .= "- Ceiling: keep 100% original, no finish applied ";
         $base .= "- Crown molding/cornices: preserve completely, stop wall finish at bottom edge ";
         $base .= "- Floor/baseboards: no changes ";
@@ -155,6 +174,52 @@ class GeminiJob extends BaseObject implements JobInterface
         $base .= "- Photorealistic result matching original image quality.";
 
         return $base;
+    }
+
+    private function resizeTextureToOriginal(string $texturePath, int $targetWidth, int $targetHeight): string
+    {
+        $info = @getimagesize($texturePath);
+        if ($info === false || $targetWidth <= 0 || $targetHeight <= 0) {
+            return $texturePath;
+        }
+
+        $mime = $info['mime'] ?? '';
+        $create = match ($mime) {
+            'image/jpeg' => 'imagecreatefromjpeg',
+            'image/png' => 'imagecreatefrompng',
+            'image/webp' => 'imagecreatefromwebp',
+            default => null,
+        };
+
+        if ($create === null || !function_exists($create)) {
+            return $texturePath;
+        }
+
+        $src = @$create($texturePath);
+        if (!$src) {
+            return $texturePath;
+        }
+
+        $dst = imagecreatetruecolor($targetWidth, $targetHeight);
+        if ($mime === 'image/png' || $mime === 'image/webp') {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+        }
+
+        $srcW = imagesx($src);
+        $srcH = imagesy($src);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $targetWidth, $targetHeight, $srcW, $srcH);
+
+        $tmpDir = Yii::getAlias('@runtime/texture_tmp');
+        FileHelper::createDirectory($tmpDir);
+        $tmpPath = $tmpDir . DIRECTORY_SEPARATOR . uniqid('texture_', true) . '.png';
+
+        $saved = imagepng($dst, $tmpPath, 6);
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $saved ? $tmpPath : $texturePath;
     }
 
     private function notifyTelegramCompleted(Request $request): void
