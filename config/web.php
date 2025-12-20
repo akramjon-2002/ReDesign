@@ -94,12 +94,6 @@ $config = [
                     'levels' => ['error', 'warning'],
                     'logFile' => '@runtime/logs/errors/' . date('Y-m-d') . '.log',
                 ],
-                [
-                    'class' => 'yii\log\FileTarget',
-                    'levels' => ['info', 'trace'],
-                    'logFile' => '@runtime/logs/info/' . date('Y-m-d') . '.log',
-                    'categories' => ['app\jobs\*', 'app\services\*', 'app\modules\*'],
-                ],
             ],
         ],
         'db' => $db,

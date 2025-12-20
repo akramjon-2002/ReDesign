@@ -22,6 +22,8 @@ return [
     'Create your first texture to get started' => 'Boshlash uchun birinchi teksturani yarating',
     'View' => 'Ko\'rish',
     'Are you sure you want to delete this item?' => 'Siz ushbu elementni o\'chirmoqchimisiz?',
+    'Clear' => 'Tozalash',
+    'Generate' => 'Yaratish',
     
     // Textures
     'Textures' => 'Teksturalar',
@@ -49,4 +51,19 @@ return [
     'Admin Panel' => 'Boshqaruv Paneli',
     'Logout' => 'Chiqish',
     'Back to Site' => 'Saytga qaytish',
+    
+    // Telegram WebApp
+    'Interior Remodel' => 'Interyer Dizayni',
+    'Remodel your room' => 'Xonangizni yangilang',
+    'Upload photo, select texture and/or color' => 'Rasmni yuklang, tekstura va/yoki rang tanlang',
+    'optional' => 'ixtiyoriy',
+    'no texture' => 'tekstura yo\'q',
+    'Photo' => 'Rasm',
+    'Waiting for Telegram...' => 'Telegram kutilmoqda...',
+    'Open via Telegram bot' => 'Telegram bot orqali oching',
+    'Error: Telegram user not found' => 'Xato: Telegram foydalanuvchisi topilmadi',
+    'Photo is too large (max 5MB)' => 'Rasm juda katta (max 5MB)',
+    'Uploading...' => 'Yuklanmoqda...',
+    'Error' => 'Xato',
+    'Request queued' => 'So\'rov navbatga qo\'yildi',
 ];
