@@ -37,6 +37,11 @@ class ColorController extends Controller
     {
         $dataProvider = new ActiveDataProvider([
             'query' => Color::find()->orderBy(['sort_order' => SORT_ASC]),
+            'pagination' => [
+                'pageSize' => 20,
+                'pageSizeParam' => false,
+                'forcePageParam' => false,
+            ],
         ]);
 
         return $this->render('index', [

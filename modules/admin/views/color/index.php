@@ -3,22 +3,28 @@
 use yii\helpers\Html;
 use yii\grid\GridView;
 
-$this->title = 'Colors';
+$this->title = Yii::t('app', 'Colors');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="color-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <p>
-        <?= Html::a('Create Color', ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
-
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'tableOptions' => ['class' => 'table table-striped table-hover'],
+        'pager' => [
+            'class' => 'yii\bootstrap5\LinkPager',
+            'options' => ['class' => 'pagination justify-content-center'],
+            'linkOptions' => ['class' => 'page-link'],
+            'activePageCssClass' => 'active',
+            'disabledPageCssClass' => 'disabled',
+            'prevPageLabel' => '‹',
+            'nextPageLabel' => '›',
+            'firstPageLabel' => '«',
+            'lastPageLabel' => '»',
+        ],
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
-
             'id',
             'title',
             [

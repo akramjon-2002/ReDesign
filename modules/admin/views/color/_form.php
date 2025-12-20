@@ -12,7 +12,7 @@ use yii\helpers\Html;
     <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
 
     <div class="mb-3">
-        <label class="form-label">Color Preview</label>
+        <label class="form-label"><?= Yii::t('app', 'Color Preview') ?></label>
         <div class="d-flex align-items-center gap-2">
             <input type="color" id="colorPickerPreview" value="<?= Html::encode($model->hex ?: '#FFFFFF') ?>" style="width:50px;height:38px;padding:0;border:none;cursor:pointer;">
             <?= $form->field($model, 'hex', ['options' => ['class' => 'mb-0', 'style' => 'flex:1;max-width:150px;']])->textInput(['maxlength' => 7, 'placeholder' => '#FFFFFF'])->label(false) ?>
@@ -22,7 +22,7 @@ use yii\helpers\Html;
     <?= $form->field($model, 'sort_order')->textInput(['type' => 'number']) ?>
 
     <div class="form-group">
-        <?= Html::submitButton($model->isNewRecord ? 'Create' : 'Save', ['class' => 'btn btn-primary']) ?>
+        <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Save'), ['class' => 'btn btn-primary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

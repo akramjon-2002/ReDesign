@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+    use Yii;
 use yii\db\ActiveRecord;
 
 /**
@@ -46,11 +47,11 @@ class Color extends ActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
-            'title' => 'Title',
-            'hex' => 'HEX Color',
-            'sort_order' => 'Sort Order',
-            'created_at' => 'Created At',
+            'id' => Yii::t('app', 'ID'),
+            'title' => Yii::t('app', 'Title'),
+            'hex' => Yii::t('app', 'Hex'),
+            'sort_order' => Yii::t('app', 'Sort Order'),
+            'created_at' => Yii::t('app', 'Created At'),
         ];
     }
 

@@ -2,52 +2,116 @@
 
 /** @var yii\web\View $this */
 
-$this->title = 'My Yii Application';
+$this->title = 'Interior Design';
 ?>
-<div class="site-index">
+<style>
+    .hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 100px 0;
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    .hero h1 {
+        font-size: 48px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+    .hero p {
+        font-size: 18px;
+        margin-bottom: 30px;
+    }
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    .btn {
+        padding: 12px 30px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .btn-primary {
+        background: white;
+        color: #667eea;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+    }
+    .btn-secondary:hover {
+        background: white;
+        color: #667eea;
+    }
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin: 60px 0;
+    }
+    .feature-card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .feature-card h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 24px;
+    }
+    .feature-card p {
+        color: #666;
+        line-height: 1.6;
+    }
+    .icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+</style>
 
-    <div class="jumbotron text-center bg-transparent mt-5 mb-5">
-        <h1 class="display-4">Congratulations!</h1>
-
-        <p class="lead">You have successfully created your Yii-powered application.</p>
-
-        <p><a class="btn btn-lg btn-success" href="https://www.yiiframework.com">Get started with Yii</a></p>
-    </div>
-
-    <div class="body-content">
-
-        <div class="row">
-            <div class="col-lg-4 mb-3">
-                <h2>Heading</h2>
-
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/doc/">Yii Documentation &raquo;</a></p>
-            </div>
-            <div class="col-lg-4 mb-3">
-                <h2>Heading</h2>
-
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/forum/">Yii Forum &raquo;</a></p>
-            </div>
-            <div class="col-lg-4">
-                <h2>Heading</h2>
-
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/extensions/">Yii Extensions &raquo;</a></p>
-            </div>
+<div class="hero">
+    <div class="container">
+        <h1>Interior Design System</h1>
+        <p>Управляйте текстурами и цветами для вашего интерьера</p>
+        <div class="btn-group">
+            <?php if (Yii::$app->user->isGuest): ?>
+                <a href="<?= \yii\helpers\Url::to(['/site/login']) ?>" class="btn btn-primary">Войти в систему</a>
+            <?php else: ?>
+                <a href="<?= \yii\helpers\Url::to(['/admin/texture/index']) ?>" class="btn btn-primary">Перейти в админку</a>
+                <a href="<?= \yii\helpers\Url::to(['/site/logout']) ?>" class="btn btn-secondary" onclick="document.getElementById('logout-form').submit(); return false;">Выйти</a>
+                <form id="logout-form" method="post" action="<?= \yii\helpers\Url::to(['/site/logout']) ?>" style="display: none;">
+                    <?= \yii\helpers\Html::csrfMetaTags() ?>
+                </form>
+            <?php endif; ?>
         </div>
+    </div>
+</div>
 
+<div class="container">
+    <div class="features">
+        <div class="feature-card">
+            <div class="icon">🎨</div>
+            <h3>Текстуры</h3>
+            <p>Управляйте всеми текстурами для интерьера в одном месте. Добавляйте новые, редактируйте и удаляйте существующие.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🌈</div>
+            <h3>Цвета</h3>
+            <p>Подберите идеальный цвет для вашего дизайна. Большой выбор предопределённых цветов или создайте свой.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">⚙️</div>
+            <h3>Управление</h3>
+            <p>Простой и удобный интерфейс администратора для управления всеми элементами системы.</p>
+        </div>
     </div>
 </div>

@@ -2,8 +2,8 @@
 
 use yii\helpers\Html;
 
-$this->title = 'Create Color';
-$this->params['breadcrumbs'][] = ['label' => 'Colors', 'url' => ['index']];
+$this->title = Yii::t('app', 'Create');
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Colors'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="color-create">

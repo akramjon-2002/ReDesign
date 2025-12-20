@@ -2,10 +2,10 @@
 
 use yii\helpers\Html;
 
-$this->title = 'Update Color: ' . $model->title;
-$this->params['breadcrumbs'][] = ['label' => 'Colors', 'url' => ['index']];
+$this->title = Yii::t('app', 'Edit') . ': ' . $model->title;
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Colors'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->title, 'url' => ['view', 'id' => $model->id]];
-$this->params['breadcrumbs'][] = 'Update';
+$this->params['breadcrumbs'][] = Yii::t('app', 'Edit');
 ?>
 <div class="color-update">
 

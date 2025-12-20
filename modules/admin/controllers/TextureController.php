@@ -47,11 +47,26 @@ class TextureController extends Controller
     {
         $dataProvider = new ActiveDataProvider([
             'query' => Texture::find()->orderBy(['created_at' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => 20,
+                'pageSizeParam' => false,
+                'forcePageParam' => false,
+            ],
         ]);
 
         return $this->render('index', [
             'dataProvider' => $dataProvider,
         ]);
+    }
+
+    /**
+     * Gallery view for all textures.
+     * @return mixed
+     */
+    public function actionGallery()
+    {
+        $this->layout = 'main';
+        return $this->render('gallery');
     }
 
     /**
@@ -75,9 +90,11 @@ class TextureController extends Controller
     public function actionCreate()
     {
         $model = new Texture();
+        $model->type = 'texture'; // Автоматически устанавливаем тип
 
         $request = Yii::$app->request;
         if ($request->isPost && $model->load($request->post())) {
+            $model->type = 'texture'; // Гарантируем тип при сохранении
             $imageFile = UploadedFile::getInstance($model, 'image_path');
             
             if ($this->textureService->createTexture($model, $imageFile)) {

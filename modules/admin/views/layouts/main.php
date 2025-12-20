@@ -30,14 +30,14 @@ $this->registerMetaTag(['name' => 'viewport', 'content' => 'width=device-width, 
 
 <div class="admin-shell">
     <aside class="admin-sidebar p-3">
-        <div class="mb-3 fw-semibold">Admin</div>
+        <div class="mb-3 fw-semibold"><?= Yii::t('app', 'Admin Panel') ?></div>
         <div class="nav flex-column gap-1">
             <?php
             $route = Yii::$app->controller->route;
             $isTexture = strpos($route, 'admin/texture') === 0;
             $isColor = strpos($route, 'admin/color') === 0;
-            echo Html::a('Textures', ['/admin/texture/index'], ['class' => 'px-2 py-2 rounded ' . ($isTexture ? 'active' : '')]);
-            echo Html::a('Colors', ['/admin/color/index'], ['class' => 'px-2 py-2 rounded ' . ($isColor ? 'active' : '')]);
+            echo Html::a(Yii::t('app', 'Textures'), ['/admin/texture/index'], ['class' => 'px-2 py-2 rounded ' . ($isTexture ? 'active' : '')]);
+            echo Html::a(Yii::t('app', 'Colors'), ['/admin/color/index'], ['class' => 'px-2 py-2 rounded ' . ($isColor ? 'active' : '')]);
             ?>
         </div>
     </aside>

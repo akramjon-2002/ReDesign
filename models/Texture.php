@@ -48,12 +48,12 @@ class Texture extends ActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
-            'title' => 'Title',
-            'prompt_suffix' => 'Prompt Suffix (optional)',
-            'image_path' => 'Texture Image',
-            'type' => 'Type',
-            'created_at' => 'Created At',
+            'id' => Yii::t('app', 'ID'),
+            'title' => Yii::t('app', 'Title'),
+            'prompt_suffix' => Yii::t('app', 'Prompt Suffix'),
+            'image_path' => Yii::t('app', 'Image'),
+            'type' => Yii::t('app', 'Type'),
+            'created_at' => Yii::t('app', 'Created At'),
         ];
     }
 

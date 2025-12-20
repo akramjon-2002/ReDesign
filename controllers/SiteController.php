@@ -57,10 +57,21 @@ class SiteController extends Controller
     /**
      * Displays homepage.
      *
-     * @return string
+     * @return string|Response
      */
     public function actionIndex()
     {
+        // If user is guest, redirect to login
+        if (Yii::$app->user->isGuest) {
+            return $this->redirect(['site/login']);
+        }
+
+        // If user is admin, redirect to admin panel
+        if (Yii::$app->user->identity->isAdmin()) {
+            return $this->redirect(['/admin/texture/index']);
+        }
+
+        // Otherwise show homepage
         return $this->render('index');
     }
 
@@ -81,6 +92,7 @@ class SiteController extends Controller
         }
 
         $model->password = '';
+        $this->layout = false;
         return $this->render('login', [
             'model' => $model,
         ]);

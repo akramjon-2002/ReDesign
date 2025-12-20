@@ -6,6 +6,8 @@ $db = require __DIR__ . '/db.php';
 $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
+    'language' => 'uz',
+    'sourceLanguage' => 'en-US',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm' => '@vendor/npm-asset',
@@ -59,6 +61,18 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
+        'i18n' => [
+            'translations' => [
+                'app*' => [
+                    'class' => 'yii\i18n\PhpMessageSource',
+                    'basePath' => '@app/messages',
+                    'sourceLanguage' => 'en-US',
+                    'fileMap' => [
+                        'app' => 'app.php',
+                    ],
+                ],
+            ],
+        ],
         'user' => [
             'identityClass' => 'app\models\User',
             'enableAutoLogin' => true,
@@ -93,7 +107,9 @@ $config = [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                'admin' => 'admin/texture/index',
+                'core' => 'admin/texture/gallery',
+                'core/<controller:\w+>' => 'admin/<controller>/index',
+                'core/<controller:\w+>/<action:\w+>' => 'admin/<controller>/<action>',
                 'telegram/webhook' => 'telegram/webhook/index',
                 'telegram/webapp' => 'telegram/webapp/index',
                 'telegram/webapp/upload' => 'telegram/webapp/upload',

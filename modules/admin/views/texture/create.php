@@ -2,8 +2,8 @@
 
 use yii\helpers\Html;
 
-$this->title = 'Create Texture';
-$this->params['breadcrumbs'][] = ['label' => 'Textures', 'url' => ['index']];
+$this->title = Yii::t('app', 'Create');
+$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Textures'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
