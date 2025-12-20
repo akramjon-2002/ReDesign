@@ -143,7 +143,31 @@ $this->title = 'AI Wall Editor';
     </div>
 </div>
 
-<!-- Page 3: Editor -->
+<!-- Page 3: All Projects (Gallery) -->
+<div id="page-gallery" class="page">
+    <div class="gallery-container">
+        <div class="gallery-header">
+            <button class="back-btn" onclick="goToPage('home')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <h1>Oxirgi Loyihalar</h1>
+            <div style="width:24px"></div>
+        </div>
+
+        <div class="gallery-grid" id="galleryGrid">
+            <!-- Projects will be loaded dynamically -->
+        </div>
+
+        <div class="gallery-loading" id="galleryLoading" style="display:none;">
+            <div class="spinner"></div>
+            <p>Yuklanmoqda...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Page 4: Editor -->
 <div id="page-editor" class="page">
     <div class="editor-container">
         <div class="editor-header">
@@ -410,6 +434,44 @@ body {
 .project-card .info span { font-size: 11px; color: var(--text-secondary); }
 .project-placeholder { grid-column: span 2; text-align: center; padding: 40px; color: var(--text-secondary); background: var(--bg-card); border-radius: 12px; }
 
+/* Gallery */
+.gallery-container { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-dark); padding-bottom: 20px; }
+.gallery-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; position: sticky; top: 0; background: var(--bg-dark); z-index: 10; }
+.gallery-header h1 { font-size: 18px; font-weight: 600; }
+
+.gallery-grid { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 12px; 
+    padding: 0 16px;
+    margin-bottom: 20px;
+}
+.gallery-grid .project-card { background: var(--bg-card); border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; }
+.gallery-grid .project-card img { width: 100%; height: 160px; object-fit: cover; }
+.gallery-grid .project-card .badge { position: absolute; top: 8px; right: 8px; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+.gallery-grid .project-card .badge.edited { background: var(--primary); color: #000; }
+.gallery-grid .project-card .badge.raw { background: rgba(255,255,255,0.2); color: white; }
+.gallery-grid .project-card .info { padding: 10px; }
+.gallery-grid .project-card .info h4 { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.gallery-grid .project-card .info span { font-size: 11px; color: var(--text-secondary); }
+
+.gallery-loading { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 20px; 
+    gap: 12px;
+}
+.spinner { 
+    width: 30px; 
+    height: 30px; 
+    border: 3px solid var(--bg-panel); 
+    border-top-color: var(--primary); 
+    border-radius: 50%; 
+    animation: spin 1s linear infinite; 
+}
+.gallery-loading p { font-size: 14px; color: var(--text-secondary); }
 
 /* Editor */
 .editor-container { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-dark); }
@@ -552,7 +614,11 @@ var APP = {
     statusUrl: '<?= Html::encode(Url::to(['/telegram/webapp/status'])) ?>',
     historyUrl: '<?= Html::encode(Url::to(['/telegram/webapp/history'])) ?>',
     uploadUrl: '<?= Html::encode(Url::to(['/telegram/webapp/upload'])) ?>',
-    csrfToken: '<?= Html::encode(Yii::$app->request->csrfToken) ?>'
+    csrfToken: '<?= Html::encode(Yii::$app->request->csrfToken) ?>',
+    galleryPage: 1,
+    galleryPerPage: 10,
+    galleryLoading: false,
+    galleryHasMore: true
 };
 
 function goToPage(pageId) {
@@ -564,6 +630,10 @@ function goToPage(pageId) {
     
     if (pageId === 'home') {
         loadProjects();
+    } else if (pageId === 'gallery') {
+        APP.galleryPage = 1;
+        APP.galleryHasMore = true;
+        loadGalleryProjects(true);
     }
 }
 
@@ -622,7 +692,7 @@ function handlePhotoSelected(file) {
 }
 
 function showAllProjects() {
-    alert('Galereya sahifasi tez orada qo\'shiladi');
+    goToPage('gallery');
 }
 
 async function loadProjects() {
@@ -672,6 +742,68 @@ function formatTimeAgo(dateStr) {
     if (diff < 86400) return Math.floor(diff / 3600) + ' soat oldin';
     if (diff < 604800) return Math.floor(diff / 86400) + ' kun oldin';
     return 'Kecha';
+}
+
+async function loadGalleryProjects(reset) {
+    if (!APP.userId || APP.galleryLoading || !APP.galleryHasMore) return;
+    
+    if (reset) {
+        APP.galleryPage = 1;
+        APP.galleryHasMore = true;
+        var grid = document.getElementById('galleryGrid');
+        if (grid) grid.innerHTML = '';
+    }
+    
+    APP.galleryLoading = true;
+    var loadingEl = document.getElementById('galleryLoading');
+    if (loadingEl) loadingEl.style.display = 'flex';
+    
+    try {
+        var url = APP.historyUrl + '?user_id=' + APP.userId + '&page=' + APP.galleryPage + '&per_page=' + APP.galleryPerPage;
+        var res = await fetch(url);
+        var data = await res.json();
+        
+        if (data.ok && data.items) {
+            var grid = document.getElementById('galleryGrid');
+            if (!grid) return;
+            
+            if (data.items.length === 0) {
+                APP.galleryHasMore = false;
+                if (APP.galleryPage === 1) {
+                    grid.innerHTML = '<div class="project-placeholder" style="grid-column: span 2;"><p>Hali loyihalar yo\'q</p></div>';
+                }
+            } else {
+                data.items.forEach(function(item) {
+                    var card = document.createElement('div');
+                    card.className = 'project-card';
+                    card.onclick = function() { openProject(item); };
+                    
+                    var imgSrc = item.output_url || item.input_url || '';
+                    var badgeClass = item.status === 'completed' ? 'edited' : 'raw';
+                    var badgeText = item.status === 'completed' ? 'Edited' : 'Raw';
+                    var title = item.texture_title || 'Loyiha #' + item.id;
+                    var timeAgo = formatTimeAgo(item.created_at);
+                    
+                    card.innerHTML = '<img src="' + imgSrc + '" alt="">' +
+                        '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
+                        '<div class="info"><h4>' + title + '</h4><span>' + timeAgo + '</span></div>';
+                    
+                    grid.appendChild(card);
+                });
+                
+                if (data.items.length < APP.galleryPerPage) {
+                    APP.galleryHasMore = false;
+                } else {
+                    APP.galleryPage++;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load gallery projects:', e);
+    } finally {
+        APP.galleryLoading = false;
+        if (loadingEl) loadingEl.style.display = 'none';
+    }
 }
 
 function openProject(item) {
@@ -961,6 +1093,21 @@ document.addEventListener('DOMContentLoaded', function() {
         goToPage('home');
     } else {
         localStorage.setItem('onboarding_shown', '1');
+    }
+    
+    // Infinite scroll for gallery
+    var galleryContainer = document.getElementById('page-gallery');
+    if (galleryContainer) {
+        galleryContainer.addEventListener('scroll', function() {
+            var scrollTop = this.scrollTop;
+            var scrollHeight = this.scrollHeight;
+            var clientHeight = this.clientHeight;
+            
+            // Load more when scrolled to 80% of the page
+            if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+                loadGalleryProjects(false);
+            }
+        });
     }
 });
 </script>

@@ -68,14 +68,19 @@ class WebappController extends Controller
         return $result;
     }
 
-    public function actionHistory($user_id)
+    public function actionHistory($user_id, $page = 1, $per_page = 10)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $page = max(1, (int)$page);
+        $per_page = min(50, max(1, (int)$per_page));
+        $offset = ($page - 1) * $per_page;
 
         $requests = Request::find()
             ->where(['user_id' => $user_id])
             ->orderBy(['created_at' => SORT_DESC])
-            ->limit(20)
+            ->limit($per_page)
+            ->offset($offset)
             ->all();
 
         $items = [];
@@ -96,6 +101,11 @@ class WebappController extends Controller
             $items[] = $item;
         }
 
-        return ['ok' => true, 'items' => $items];
+        return [
+            'ok' => true, 
+            'items' => $items,
+            'page' => $page,
+            'per_page' => $per_page
+        ];
     }
 }
