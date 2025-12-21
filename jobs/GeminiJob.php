@@ -137,7 +137,7 @@ class GeminiJob extends BaseObject implements JobInterface
         $hasColor = is_string($this->color) && $this->color !== '';
         $hasTexture = $textureImagePath !== null;
 
-        $base = "Professional interior wall refinishing. Apply new finish ONLY to vertical wall surfaces. ";
+        $base = "Professional interior wall refinishing. Apply new finish to ALL wall surfaces, including the large left wall and the right wall plane (100% coverage, no unedited wall pixels). ";
 
         // Описание материала
         if ($hasTexture && $hasColor) {
@@ -150,21 +150,20 @@ class GeminiJob extends BaseObject implements JobInterface
             $base .= "Apply neutral wall finish. ";
         }
 
-        // Критичные ограничения
+        // Критичные ограничения (коротко и приоритетно)
         $base .= "STRICT BOUNDARIES: ";
-        $base .= "- Keep exact original pixel dimensions (same width and height), no outpainting, no canvas expansion, no zoom ";
-        $base .= "- Ceiling: keep 100% original, no finish applied ";
-        $base .= "- Crown molding/cornices: preserve completely, stop wall finish at bottom edge ";
-        $base .= "- Floor/baseboards: no changes ";
-        $base .= "- Windows/doors/frames: mask and preserve ";
-        $base .= "- Furniture/objects: do not alter ";
+        $base .= "- Keep exact original pixel dimensions, no outpainting, no canvas expansion, no zoom ";
+        $base .= "- Ceiling and crown molding/cornices: keep 100% original; stop finish at the bottom edge of molding ";
+        $base .= "- Doors/frames and windows: keep original, do not alter ";
+        $base .= "- Do not add any new objects, shapes, stains, or artifacts anywhere on the wall ";
         
         // Зоны применения
         $base .= "TARGET AREAS: ";
-        $base .= "- All exposed vertical wall sections from floor to ceiling junction ";
+        $base .= "- ALL wall planes, especially the large left wall and the right wall plane, from floor/baseboard line up to the molding/ceiling boundary ";
+        $base .= "- Include columns/pillars as part of the wall finish ";
         $base .= "- Wall strips above cabinets/furniture up to ceiling line ";
         $base .= "- Wall sections behind/between furniture ";
-        $base .= "- Maintain wall perspective and depth ";
+        $base .= "- Maintain wall perspective and depth; no gaps or missed wall patches; keep clean empty wall areas ";
         
         // Качество
         $base .= "QUALITY: ";
