@@ -300,7 +300,7 @@ $this->title = 'AI Wall Editor';
         <div class="result-info">
             <div class="result-title-row">
                 <h3 id="resultTitle">Yashash xonasi</h3>
-                <button class="ai-edit-btn">
+                <button class="ai-edit-btn" onclick="editResultAgain()">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
                     </svg>
@@ -639,6 +639,43 @@ var APP = {
     galleryHasMore: true
 };
 
+var APP_STATE_KEY = 'ai_wall_state';
+
+function saveAppState() {
+    try {
+        var data = {
+            originalImageUrl: APP.originalImageUrl,
+            resultImageUrl: APP.resultImageUrl,
+            selectedColor: APP.selectedColor,
+            selectedTextureId: APP.selectedTextureId,
+            currentRequestId: APP.currentRequestId
+        };
+        localStorage.setItem(APP_STATE_KEY, JSON.stringify(data));
+    } catch (e) {}
+}
+
+function restoreAppState() {
+    try {
+        var raw = localStorage.getItem(APP_STATE_KEY);
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        if (data && !APP.originalImageUrl && data.originalImageUrl) APP.originalImageUrl = data.originalImageUrl;
+        if (data && !APP.resultImageUrl && data.resultImageUrl) APP.resultImageUrl = data.resultImageUrl;
+        if (data && !APP.selectedColor && data.selectedColor) APP.selectedColor = data.selectedColor;
+        if (data && !APP.selectedTextureId && data.selectedTextureId) APP.selectedTextureId = data.selectedTextureId;
+        if (data && !APP.currentRequestId && data.currentRequestId) APP.currentRequestId = data.currentRequestId;
+    } catch (e) {}
+}
+
+function refreshResultView() {
+    var activeTab = document.querySelector('.result-tab.active');
+    if (activeTab && activeTab.textContent.toLowerCase().indexOf('old') !== -1) {
+        showOriginal();
+        return;
+    }
+    showResult();
+}
+
 function goToPage(pageId) {
     document.querySelectorAll('.page').forEach(function(p) {
         p.classList.remove('active');
@@ -711,6 +748,7 @@ function handlePhotoSelected(file) {
     reader.onload = function(e) {
         APP.selectedPhotoDataUrl = e.target.result;
         APP.originalImageUrl = e.target.result;
+        saveAppState();
         
         var previewImg = document.getElementById('editorPreviewImg');
         if (previewImg) previewImg.src = e.target.result;
@@ -839,6 +877,8 @@ function openProject(item) {
     if (item.status === 'completed' && item.output_url) {
         APP.resultImageUrl = item.output_url;
         APP.originalImageUrl = item.input_url;
+        APP.currentRequestId = item.id;
+        saveAppState();
         
         var resultImg = document.getElementById('resultImage');
         if (resultImg) resultImg.src = item.output_url;
@@ -897,6 +937,7 @@ async function generateImage() {
         }
         
         APP.currentRequestId = data.request_id;
+        saveAppState();
         startPolling();
         
     } catch (err) {
@@ -921,6 +962,7 @@ function startPolling() {
                     APP.pollingTimer = null;
                     
                     APP.resultImageUrl = data.output_url;
+                    saveAppState();
                     
                     var resultImg = document.getElementById('resultImage');
                     if (resultImg) resultImg.src = data.output_url;
@@ -956,6 +998,7 @@ function cancelGeneration() {
 }
 
 function showOriginal() {
+    if (!APP.originalImageUrl) restoreAppState();
     var resultImg = document.getElementById('resultImage');
     if (resultImg && APP.originalImageUrl) {
         resultImg.src = APP.originalImageUrl;
@@ -965,6 +1008,7 @@ function showOriginal() {
 }
 
 function showResult() {
+    if (!APP.resultImageUrl) restoreAppState();
     var resultImg = document.getElementById('resultImage');
     if (resultImg && APP.resultImageUrl) {
         resultImg.src = APP.resultImageUrl;
@@ -977,9 +1021,22 @@ async function saveToGallery() {
     if (!APP.resultImageUrl) return;
     
     try {
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
+            Telegram.WebApp.openLink(APP.resultImageUrl);
+            alert('Rasmni saqlash uchun ochilgan oynada ushlab turib saqlang.');
+            return;
+        }
         var response = await fetch(APP.resultImageUrl);
         var blob = await response.blob();
         
+        if (navigator.share && navigator.canShare) {
+            var file = new File([blob], 'ai-wall-result-' + Date.now() + '.png', { type: blob.type || 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: 'AI Wall Editor natijasi' });
+                return;
+            }
+        }
+
         var link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = 'ai-wall-result-' + Date.now() + '.png';
@@ -991,6 +1048,37 @@ async function saveToGallery() {
         alert('Rasm saqlandi!');
     } catch (e) {
         window.open(APP.resultImageUrl, '_blank');
+    }
+}
+
+async function editResultAgain() {
+    if (!APP.resultImageUrl) {
+        restoreAppState();
+    }
+    if (!APP.resultImageUrl) {
+        alert('Natija topilmadi.');
+        return;
+    }
+
+    try {
+        var response = await fetch(APP.resultImageUrl);
+        var blob = await response.blob();
+        var file = new File([blob], 'ai-edit-' + Date.now() + '.png', { type: blob.type || 'image/png' });
+        APP.selectedPhoto = file;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            APP.selectedPhotoDataUrl = e.target.result;
+            APP.originalImageUrl = e.target.result;
+            saveAppState();
+
+            var previewImg = document.getElementById('editorPreviewImg');
+            if (previewImg) previewImg.src = e.target.result;
+            goToPage('editor');
+        };
+        reader.readAsDataURL(file);
+    } catch (e) {
+        alert('Rasmni yuklab bo\'lmadi. Qayta urinib ko\'ring.');
     }
 }
 
@@ -1138,5 +1226,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    restoreAppState();
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            restoreAppState();
+            var resultPage = document.getElementById('page-result');
+            if (resultPage && resultPage.classList.contains('active')) {
+                refreshResultView();
+            }
+        }
+    });
 });
 </script>

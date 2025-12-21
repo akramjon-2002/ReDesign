@@ -153,7 +153,7 @@ class GeminiJob extends BaseObject implements JobInterface
         // Критичные ограничения (коротко и приоритетно)
         $base .= "STRICT BOUNDARIES: ";
         $base .= "- Keep exact original pixel dimensions, no outpainting, no canvas expansion, no zoom ";
-        $base .= "- Ceiling and crown molding/cornices: keep 100% original; stop finish at the bottom edge of molding ";
+        $base .= "- Ceiling and ceiling plinths (crown molding/cornices): keep 100% original, do not recolor or texture; stop finish at the bottom edge of molding ";
         $base .= "- Doors/frames and windows: keep original, do not alter ";
         $base .= "- Do not add any new objects, shapes, stains, or artifacts anywhere on the wall ";
         
