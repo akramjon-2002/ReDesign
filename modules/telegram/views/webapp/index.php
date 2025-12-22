@@ -942,8 +942,8 @@ function applyCrop() {
     }
     
     var canvas = APP.cropper.getCroppedCanvas({
-        maxWidth: 4096,
-        maxHeight: 4096,
+        maxWidth: 2048,
+        maxHeight: 2048,
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high'
     });
@@ -959,7 +959,7 @@ function applyCrop() {
             return;
         }
         
-        var croppedFile = new File([blob], 'cropped-' + Date.now() + '.png', { type: 'image/png' });
+        var croppedFile = new File([blob], 'cropped-' + Date.now() + '.jpg', { type: 'image/jpeg' });
         APP.selectedPhoto = croppedFile;
         
         var reader = new FileReader();
@@ -978,7 +978,7 @@ function applyCrop() {
             goToPage('editor');
         };
         reader.readAsDataURL(croppedFile);
-    }, 'image/png', 0.92);
+    }, 'image/jpeg', 0.92);
 }
 
 function showAllProjects() {
