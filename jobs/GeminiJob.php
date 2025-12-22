@@ -102,6 +102,8 @@ class GeminiJob extends BaseObject implements JobInterface
                     'out_' . $request->id . '_',
                     $result['content_type'] ?? 'image/png'
                 );
+                $outputPath = $outputDir . DIRECTORY_SEPARATOR . $fileName;
+                $this->logImageSizes($request->id, $inputImagePath, $textureImagePath, $resizedTexturePath, $outputPath);
 
                 $request->output_image_path = 'uploads/requests/' . $fileName;
                 $request->status = Request::STATUS_COMPLETED;
@@ -219,6 +221,39 @@ class GeminiJob extends BaseObject implements JobInterface
         imagedestroy($dst);
 
         return $saved ? $tmpPath : $texturePath;
+    }
+
+    private function logImageSizes(int $requestId, string $inputPath, ?string $texturePath, ?string $resizedTexturePath, ?string $outputPath = null): void
+    {
+        $logDir = Yii::getAlias('@runtime/logs');
+        FileHelper::createDirectory($logDir);
+
+        $inputSize = $this->formatImageSize($inputPath);
+        $textureSize = $texturePath ? $this->formatImageSize($texturePath) : 'none';
+        $resizedSize = $resizedTexturePath && $resizedTexturePath !== $texturePath
+            ? $this->formatImageSize($resizedTexturePath)
+            : 'same';
+        $outputSize = $outputPath ? $this->formatImageSize($outputPath) : 'pending';
+
+        $line = sprintf(
+            "[%s] request_id=%d input=%s texture=%s resized_texture=%s output=%s\n",
+            date('c'),
+            $requestId,
+            $inputSize,
+            $textureSize,
+            $resizedSize,
+            $outputSize
+        );
+        @file_put_contents($logDir . DIRECTORY_SEPARATOR . 'image_sizes.log', $line, FILE_APPEND);
+    }
+
+    private function formatImageSize(string $path): string
+    {
+        $size = @getimagesize($path);
+        if ($size === false) {
+            return 'unknown';
+        }
+        return $size[0] . 'x' . $size[1];
     }
 
     private function notifyTelegramCompleted(Request $request): void
