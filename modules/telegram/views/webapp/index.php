@@ -504,9 +504,9 @@ body {
     justify-content: center; 
     position: relative; 
     padding: 16px; 
-    max-height: 45vh;
+    max-height: none;
     min-height: 200px;
-    overflow: hidden;
+    overflow: visible;
 }
 .editor-preview img { 
     max-width: 100%; 
@@ -598,7 +598,7 @@ body {
 .result-header h1 { font-size: 18px; font-weight: 600; }
 
 .result-image-container { position: relative; margin: 0 16px 16px; border-radius: 16px; overflow: hidden; }
-.result-image-container img { width: 100%; max-height: 400px; object-fit: cover; }
+.result-image-container img { width: 100%; height: auto; max-height: none; object-fit: contain; }
 
 .result-info { padding: 0 16px 16px; }
 .result-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
