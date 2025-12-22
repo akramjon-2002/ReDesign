@@ -17,15 +17,17 @@ class RequestService
      * @param int|null $textureId Texture ID (optional)
      * @param UploadedFile $imageFile Uploaded image file
      * @param string|null $color HEX color (optional)
+     * @param string|null $aspectRatio Aspect ratio (optional)
      * @return Request
      */
-    public function createAndEnqueueGemini($userId, ?int $textureId, UploadedFile $imageFile, ?string $color = null): Request
+    public function createAndEnqueueGemini($userId, ?int $textureId, UploadedFile $imageFile, ?string $color = null, ?string $aspectRatio = null): Request
     {
         Yii::info([
             'action' => 'create_gemini_request',
             'user_id' => $userId,
             'texture_id' => $textureId,
             'color' => $color,
+            'aspect_ratio' => $aspectRatio,
         ], __METHOD__);
 
         $transaction = Yii::$app->db->beginTransaction();
@@ -50,6 +52,7 @@ class RequestService
             $request->user_id = $userId;
             $request->texture_id = $textureId;
             $request->color_hex = $color;
+            $request->aspect_ratio = $aspectRatio;
             $request->input_image_path = 'uploads/requests/' . $fileName;
             $request->status = Request::STATUS_NEW;
 
@@ -67,6 +70,7 @@ class RequestService
                 'requestId' => $request->id,
                 'textureId' => $textureId,
                 'color' => $color,
+                'aspectRatio' => $aspectRatio,
             ]));
 
             Yii::info([
@@ -74,6 +78,7 @@ class RequestService
                 'request_id' => $request->id,
                 'texture_id' => $textureId,
                 'color' => $color,
+                'aspect_ratio' => $aspectRatio,
             ], __METHOD__);
 
             $transaction->commit();

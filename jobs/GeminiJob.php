@@ -15,6 +15,7 @@ class GeminiJob extends BaseObject implements JobInterface
     public string $prompt = '';
     public ?string $color = null;
     public ?int $textureId = null;
+    public ?string $aspectRatio = null;
 
     public function execute($queue)
     {
@@ -63,6 +64,7 @@ class GeminiJob extends BaseObject implements JobInterface
                 'request_id' => $this->requestId,
                 'color' => $this->color,
                 'texture_id' => $this->textureId,
+                'aspect_ratio' => $this->aspectRatio,
                 'has_texture_image' => $textureImagePath !== null,
                 'prompt' => mb_substr($prompt, 0, 150),
             ], __METHOD__);
@@ -81,7 +83,7 @@ class GeminiJob extends BaseObject implements JobInterface
                     $inputImagePath,
                     $prompt,
                     $resizedTexturePath,
-                    null,
+                    $this->aspectRatio,
                     [
                         'responseModalities' => ['Image'],
                     ]
@@ -153,8 +155,11 @@ class GeminiJob extends BaseObject implements JobInterface
         }
 
         // Критичные ограничения (коротко и приоритетно)
+        $base .= "CRITICAL OUTPUT REQUIREMENTS: ";
+        $base .= "- MUST preserve exact original aspect ratio (if input is portrait 9:16, output MUST be portrait 9:16; if input is landscape, output MUST be landscape) ";
+        $base .= "- MUST keep exact original pixel dimensions, absolutely NO outpainting, NO canvas expansion, NO adding pixels to sides, NO zoom out ";
+        $base .= "- DO NOT convert portrait images to landscape or vice versa ";
         $base .= "STRICT BOUNDARIES: ";
-        $base .= "- Keep exact original pixel dimensions, no outpainting, no canvas expansion, no zoom ";
         $base .= "- Ceiling and ceiling plinths (crown molding/cornices): keep 100% original, do not recolor or texture; stop finish at the bottom edge of molding ";
         $base .= "- Doors/frames and windows: keep original, do not alter ";
         $base .= "- Do not add any new objects, shapes, stains, or artifacts anywhere on the wall ";

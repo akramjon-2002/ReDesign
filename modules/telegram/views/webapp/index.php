@@ -167,6 +167,44 @@ $this->title = 'AI Wall Editor';
     </div>
 </div>
 
+<!-- Page: Crop -->
+<div id="page-crop" class="page">
+    <div class="crop-container">
+        <div class="crop-header">
+            <button class="back-btn" onclick="cancelCrop()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <h1>O'lchamni tanlang</h1>
+            <button class="done-btn" onclick="applyCrop()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="ratio-selector" id="ratioSelector">
+            <!-- Ratio buttons will be generated dynamically -->
+        </div>
+        
+        <div class="crop-preview">
+            <img id="cropImage" src="" alt="Crop">
+        </div>
+        
+        <div class="crop-hint">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M5 9L2 12L5 15M19 9L22 12L19 15M9 5L12 2L15 5M9 19L12 22L15 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Rasmni suring kerakli joyni tanlash uchun</span>
+        </div>
+        
+        <div class="crop-footer">
+            <button class="btn-apply-crop" onclick="applyCrop()">Tasdiqlash</button>
+        </div>
+    </div>
+</div>
+
 <!-- Page 4: Editor -->
 <div id="page-editor" class="page">
     <div class="editor-container">
@@ -615,10 +653,39 @@ body {
 .btn-save { width: 100%; padding: 16px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-share { width: 100%; padding: 16px; background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
+/* Crop Page */
+.crop-container { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-dark); }
+.crop-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; }
+.crop-header h1 { font-size: 18px; font-weight: 600; }
+.done-btn { background: none; border: none; color: var(--primary); cursor: pointer; padding: 8px; }
+.ratio-selector { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; flex-shrink: 0; }
+.ratio-btn { padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.ratio-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+.ratio-btn .ratio-icon { display: inline-block; width: 14px; height: 14px; border: 1.5px solid currentColor; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.ratio-btn.portrait .ratio-icon { width: 10px; height: 14px; }
+.ratio-btn.landscape .ratio-icon { width: 14px; height: 10px; }
+.ratio-btn.square .ratio-icon { width: 12px; height: 12px; }
+.crop-preview { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; overflow: hidden; min-height: 300px; }
+.crop-preview img { max-width: 100%; max-height: 100%; display: block; }
+.crop-hint { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; color: var(--text-secondary); font-size: 13px; }
+.crop-footer { padding: 16px; }
+.btn-apply-crop { width: 100%; padding: 14px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
 </style>
 
+<!-- Cropper.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
+var STANDARD_RATIOS = [
+    { name: '9:16', value: 9/16, label: '9:16', type: 'portrait' },
+    { name: '3:4', value: 3/4, label: '3:4', type: 'portrait' },
+    { name: '1:1', value: 1, label: '1:1', type: 'square' },
+    { name: '4:3', value: 4/3, label: '4:3', type: 'landscape' },
+    { name: '16:9', value: 16/9, label: '16:9', type: 'landscape' }
+];
+
 var APP = {
     userId: null,
     currentRequestId: null,
@@ -629,6 +696,11 @@ var APP = {
     originalImageUrl: null,
     resultImageUrl: null,
     pollingTimer: null,
+    cropper: null,
+    originalFile: null,
+    currentRatio: null,
+    imageNaturalWidth: 0,
+    imageNaturalHeight: 0,
     statusUrl: '<?= Html::encode(Url::to(['/telegram/webapp/status'])) ?>',
     historyUrl: '<?= Html::encode(Url::to(['/telegram/webapp/history'])) ?>',
     uploadUrl: '<?= Html::encode(Url::to(['/telegram/webapp/upload'])) ?>',
@@ -742,20 +814,171 @@ function handlePhotoSelected(file) {
         return;
     }
     
-    APP.selectedPhoto = file;
+    APP.originalFile = file;
     
     var reader = new FileReader();
     reader.onload = function(e) {
         APP.selectedPhotoDataUrl = e.target.result;
-        APP.originalImageUrl = e.target.result;
-        saveAppState();
-        
-        var previewImg = document.getElementById('editorPreviewImg');
-        if (previewImg) previewImg.src = e.target.result;
-        
-        goToPage('editor');
+        openCropPage(e.target.result);
     };
     reader.readAsDataURL(file);
+}
+
+function openCropPage(imageDataUrl) {
+    var cropImage = document.getElementById('cropImage');
+    if (cropImage) {
+        cropImage.src = imageDataUrl;
+    }
+    
+    goToPage('crop');
+    
+    // Ждём загрузки изображения для получения размеров
+    var img = new Image();
+    img.onload = function() {
+        APP.imageNaturalWidth = img.naturalWidth;
+        APP.imageNaturalHeight = img.naturalHeight;
+        
+        // Генерируем кнопки ratio
+        generateRatioButtons();
+        
+        // Инициализируем cropper с выбранным ratio
+        setTimeout(function() {
+            initCropper();
+        }, 100);
+    };
+    img.src = imageDataUrl;
+}
+
+function findClosestRatios(imageRatio) {
+    // Сортируем по близости к оригинальному ratio
+    var sorted = STANDARD_RATIOS.slice().sort(function(a, b) {
+        return Math.abs(a.value - imageRatio) - Math.abs(b.value - imageRatio);
+    });
+    
+    // Возвращаем 3 ближайших
+    return sorted.slice(0, 3);
+}
+
+function generateRatioButtons() {
+    var container = document.getElementById('ratioSelector');
+    if (!container) return;
+    
+    var imageRatio = APP.imageNaturalWidth / APP.imageNaturalHeight;
+    var closestRatios = findClosestRatios(imageRatio);
+    
+    // Выбираем ближайший по умолчанию
+    APP.currentRatio = closestRatios[0];
+    
+    container.innerHTML = '';
+    
+    closestRatios.forEach(function(ratio, index) {
+        var btn = document.createElement('button');
+        btn.className = 'ratio-btn ' + ratio.type + (index === 0 ? ' active' : '');
+        btn.innerHTML = '<span class="ratio-icon"></span>' + ratio.label;
+        btn.onclick = function() { selectRatio(ratio); };
+        container.appendChild(btn);
+    });
+}
+
+function selectRatio(ratio) {
+    APP.currentRatio = ratio;
+    
+    // Обновляем активную кнопку
+    document.querySelectorAll('.ratio-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.ratio-btn').classList.add('active');
+    
+    // Обновляем cropper с новым ratio
+    if (APP.cropper) {
+        APP.cropper.setAspectRatio(ratio.value);
+    }
+}
+
+function initCropper() {
+    if (APP.cropper) {
+        APP.cropper.destroy();
+        APP.cropper = null;
+    }
+    
+    var cropImage = document.getElementById('cropImage');
+    if (!cropImage) return;
+    
+    var aspectRatio = APP.currentRatio ? APP.currentRatio.value : 1;
+    
+    APP.cropper = new Cropper(cropImage, {
+        viewMode: 1,
+        dragMode: 'move',
+        aspectRatio: aspectRatio,
+        autoCropArea: 1,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxMovable: false,
+        cropBoxResizable: false,
+        toggleDragModeOnDblclick: false,
+        background: false,
+        responsive: true,
+        checkOrientation: true
+    });
+}
+
+function cancelCrop() {
+    if (APP.cropper) {
+        APP.cropper.destroy();
+        APP.cropper = null;
+    }
+    APP.originalFile = null;
+    APP.selectedPhotoDataUrl = null;
+    APP.currentRatio = null;
+    goToPage('home');
+}
+
+function applyCrop() {
+    if (!APP.cropper) {
+        goToPage('home');
+        return;
+    }
+    
+    var canvas = APP.cropper.getCroppedCanvas({
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+    });
+    
+    if (!canvas) {
+        goToPage('home');
+        return;
+    }
+    
+    canvas.toBlob(function(blob) {
+        if (!blob) {
+            goToPage('home');
+            return;
+        }
+        
+        var croppedFile = new File([blob], 'cropped-' + Date.now() + '.png', { type: 'image/png' });
+        APP.selectedPhoto = croppedFile;
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            APP.originalImageUrl = e.target.result;
+            saveAppState();
+            
+            var previewImg = document.getElementById('editorPreviewImg');
+            if (previewImg) previewImg.src = e.target.result;
+            
+            if (APP.cropper) {
+                APP.cropper.destroy();
+                APP.cropper = null;
+            }
+            
+            goToPage('editor');
+        };
+        reader.readAsDataURL(croppedFile);
+    }, 'image/png', 0.92);
 }
 
 function showAllProjects() {
@@ -923,6 +1146,7 @@ async function generateImage() {
         formData.append('photo', APP.selectedPhoto);
         if (APP.selectedTextureId) formData.append('texture_id', APP.selectedTextureId);
         if (APP.selectedColor) formData.append('color', APP.selectedColor);
+        if (APP.currentRatio) formData.append('aspect_ratio', APP.currentRatio.name);
         
         var res = await fetch(APP.uploadUrl, {
             method: 'POST',

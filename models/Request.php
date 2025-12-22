@@ -13,6 +13,7 @@ use yii\db\ActiveRecord;
  * @property int|null $texture_id
  * @property int|null $color_id
  * @property string|null $color_hex
+ * @property string|null $aspect_ratio
  * @property string|null $input_image_path
  * @property string|null $output_image_path
  * @property string|null $status
@@ -45,7 +46,7 @@ class Request extends ActiveRecord
             [['user_id'], 'required'],
             [['user_id', 'texture_id', 'color_id'], 'integer'],
             [['created_at'], 'safe'],
-            [['input_image_path', 'output_image_path', 'status'], 'string', 'max' => 255],
+            [['input_image_path', 'output_image_path', 'status', 'aspect_ratio'], 'string', 'max' => 255],
             [['color_hex'], 'string', 'max' => 7],
             [['texture_id'], 'exist', 'skipOnError' => true, 'targetClass' => Texture::class, 'targetAttribute' => ['texture_id' => 'id']],
             [['color_id'], 'exist', 'skipOnError' => true, 'targetClass' => Color::class, 'targetAttribute' => ['color_id' => 'id']],

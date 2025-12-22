@@ -36,6 +36,9 @@ class UploadAction extends Action
             $color = Yii::$app->request->post('color');
             $color = (is_string($color) && $color !== '') ? $color : null;
 
+            $aspectRatio = Yii::$app->request->post('aspect_ratio');
+            $aspectRatio = (is_string($aspectRatio) && $aspectRatio !== '') ? $aspectRatio : null;
+
             $imageFile = UploadedFile::getInstanceByName('photo');
             if ($imageFile === null) {
                 throw new BadRequestHttpException('photo file is required');
@@ -65,6 +68,7 @@ class UploadAction extends Action
                 'user_id' => $userId,
                 'texture_id' => $textureId,
                 'color' => $color,
+                'aspect_ratio' => $aspectRatio,
                 'photo_name' => $imageFile->name,
                 'photo_size' => $imageFile->size,
             ], __METHOD__);
@@ -73,7 +77,8 @@ class UploadAction extends Action
                 $userId,
                 $textureId,
                 $imageFile,
-                $color
+                $color,
+                $aspectRatio
             );
 
             return [
