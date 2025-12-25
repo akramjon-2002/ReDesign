@@ -90,6 +90,7 @@ class WebappController extends Controller
                 'status' => $req->status,
                 'created_at' => $req->created_at,
                 'texture_title' => $req->texture ? $req->texture->title : null,
+                'texture_preview' => $req->texture && $req->texture->image_path ? Yii::$app->request->baseUrl . '/' . $req->texture->image_path : null,
                 'color_hex' => $req->color_hex,
             ];
             if (!empty($req->input_image_path)) {

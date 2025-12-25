@@ -345,7 +345,11 @@ $this->title = 'AI Wall Editor';
                     AI EDIT
                 </button>
             </div>
-            <p class="result-details" id="resultDetails">Rang: Deep Teal #124A • Tekstura: Mat</p>
+            <div class="result-details" id="resultDetails">
+                <span class="color-preview" id="colorPreview" style="display:none;"></span>
+                <img class="texture-preview" id="texturePreview" style="display:none;" alt="">
+                <span id="resultDetailsText">Rang: Deep Teal #124A • Tekstura: Mat</span>
+            </div>
         </div>
 
         <div class="result-tabs">
@@ -642,7 +646,9 @@ body {
 .result-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .result-title-row h3 { font-size: 20px; font-weight: 600; }
 .ai-edit-btn { background: none; border: 1px solid var(--primary); color: var(--primary); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-.result-details { font-size: 13px; color: var(--primary); }
+.result-details { font-size: 14px; color: var(--primary); display: flex; align-items: center; gap: 12px; }
+.result-details .color-preview { width: 48px; height: 48px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.result-details .texture-preview { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
 .result-tabs { display: flex; margin: 0 16px 16px; background: var(--bg-panel); border-radius: 10px; overflow: hidden; }
 .result-tab { flex: 1; padding: 12px; background: none; border: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
@@ -1106,12 +1112,27 @@ function openProject(item) {
         var resultImg = document.getElementById('resultImage');
         if (resultImg) resultImg.src = item.output_url;
         
-        var details = document.getElementById('resultDetails');
-        if (details) {
+        var detailsText = document.getElementById('resultDetailsText');
+        var colorPreview = document.getElementById('colorPreview');
+        var texturePreview = document.getElementById('texturePreview');
+        if (detailsText) {
             var text = '';
-            if (item.color_hex) text += 'Rang: ' + item.color_hex;
-            if (item.texture_title) text += (text ? ' • ' : '') + 'Tekstura: ' + item.texture_title;
-            details.textContent = text || 'AI bilan tahrirlangan';
+            if (item.color_hex) {
+                text += 'Rang: ' + item.color_hex;
+                if (colorPreview) {
+                    colorPreview.style.display = 'block';
+                    colorPreview.style.background = item.color_hex;
+                }
+                if (texturePreview) texturePreview.style.display = 'none';
+            } else if (item.texture_title) {
+                text += 'Tekstura: ' + item.texture_title;
+                if (texturePreview && item.texture_preview) {
+                    texturePreview.style.display = 'block';
+                    texturePreview.src = item.texture_preview;
+                }
+                if (colorPreview) colorPreview.style.display = 'none';
+            }
+            detailsText.textContent = text || 'AI bilan tahrirlangan';
         }
         
         goToPage('result');
@@ -1191,11 +1212,32 @@ function startPolling() {
                     var resultImg = document.getElementById('resultImage');
                     if (resultImg) resultImg.src = data.output_url;
                     
-                    var details = document.getElementById('resultDetails');
-                    if (details) {
+                    var detailsText = document.getElementById('resultDetailsText');
+                    var colorPreview = document.getElementById('colorPreview');
+                    var texturePreview = document.getElementById('texturePreview');
+                    if (detailsText) {
                         var text = '';
-                        if (APP.selectedColor) text += 'Rang: ' + APP.selectedColor;
-                        details.textContent = text || 'AI bilan tahrirlangan';
+                        if (APP.selectedColor) {
+                            text += 'Rang: ' + APP.selectedColor;
+                            if (colorPreview) {
+                                colorPreview.style.display = 'block';
+                                colorPreview.style.background = APP.selectedColor;
+                            }
+                            if (texturePreview) texturePreview.style.display = 'none';
+                        } else if (APP.selectedTextureId) {
+                            var selectedTexture = document.querySelector('.texture-item.selected');
+                            if (selectedTexture) {
+                                var textureName = selectedTexture.querySelector('.texture-name');
+                                var textureImg = selectedTexture.querySelector('img');
+                                text += 'Tekstura: ' + (textureName ? textureName.textContent : '');
+                                if (texturePreview && textureImg) {
+                                    texturePreview.style.display = 'block';
+                                    texturePreview.src = textureImg.src;
+                                }
+                                if (colorPreview) colorPreview.style.display = 'none';
+                            }
+                        }
+                        detailsText.textContent = text || 'AI bilan tahrirlangan';
                     }
                     
                     goToPage('result');
