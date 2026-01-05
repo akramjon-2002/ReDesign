@@ -24,9 +24,11 @@ class ThumbnailService
     {
         $webroot = Yii::getAlias('@webroot');
         $absoluteOriginalPath = $webroot . '/' . $originalPath;
-        
+
         if (!file_exists($absoluteOriginalPath)) {
-            Yii::warning("Original file not found: {$absoluteOriginalPath}", __METHOD__);
+            $error = "Original file not found: {$absoluteOriginalPath}";
+            Yii::warning($error, __METHOD__);
+            echo "ОШИБКА: {$error}\n"; // Для консоли
             return null;
         }
 
@@ -49,7 +51,9 @@ class ThumbnailService
             // Получаем информацию об изображении
             $imageInfo = @getimagesize($absoluteOriginalPath);
             if ($imageInfo === false) {
-                Yii::warning("Cannot get image info: {$absoluteOriginalPath}", __METHOD__);
+                $error = "Cannot get image info: {$absoluteOriginalPath}";
+                Yii::warning($error, __METHOD__);
+                echo "ОШИБКА: {$error}\n"; // Для консоли
                 return null;
             }
 
@@ -58,6 +62,9 @@ class ThumbnailService
             // Создаем исходное изображение
             $source = $this->createImageResource($absoluteOriginalPath, $type);
             if ($source === null) {
+                $error = "Cannot create image resource: {$absoluteOriginalPath}, type: {$type}";
+                Yii::warning($error, __METHOD__);
+                echo "ОШИБКА: {$error}\n"; // Для консоли
                 return null;
             }
 
@@ -111,11 +118,16 @@ class ThumbnailService
             return $thumbnailRelativePath;
 
         } catch (\Throwable $e) {
+            $error = "Thumbnail creation failed: {$e->getMessage()}";
             Yii::error([
                 'message' => 'Thumbnail creation failed',
                 'path' => $originalPath,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ], __METHOD__);
+            echo "ОШИБКА: {$error}\n"; // Для консоли
+            echo "Путь: {$originalPath}\n";
+            echo "Trace: {$e->getTraceAsString()}\n";
             return null;
         }
     }

@@ -163,11 +163,15 @@ class GenerateThumbnailsController extends Controller
                     $this->stdout("(оригинал: " . $this->formatBytes($originalSize) . " → миниатюра: " . $this->formatBytes($thumbSize) . ", -{$reduction}%)\n");
                     $created++;
                 } else {
-                    $this->stdout("ошибка создания\n", Console::FG_RED);
+                    // Проверяем логи для детальной информации
+                    $this->stdout("ошибка создания", Console::FG_RED);
+                    $this->stdout(" (проверьте runtime/logs/app.log для деталей)\n", Console::FG_YELLOW);
+                    $this->stdout("    Путь: {$texture->image_path}\n", Console::FG_YELLOW);
                     $errors++;
                 }
             } catch (\Throwable $e) {
                 $this->stdout("ошибка: {$e->getMessage()}\n", Console::FG_RED);
+                $this->stdout("    Путь: {$texture->image_path}\n", Console::FG_YELLOW);
                 $errors++;
             }
         }
