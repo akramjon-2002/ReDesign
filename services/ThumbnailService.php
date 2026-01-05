@@ -28,7 +28,7 @@ class ThumbnailService
         if (!file_exists($absoluteOriginalPath)) {
             $error = "Original file not found: {$absoluteOriginalPath}";
             Yii::warning($error, __METHOD__);
-            echo "ОШИБКА: {$error}\n"; // Для консоли
+            Yii::info(['error' => $error], 'THUMBNAIL_DEBUG');
             return null;
         }
 
@@ -42,6 +42,7 @@ class ThumbnailService
 
             // Если миниатюра уже существует, возвращаем её
             if (file_exists($thumbnailAbsolutePath)) {
+                Yii::info(['action' => 'thumbnail_exists', 'path' => $thumbnailRelativePath], 'THUMBNAIL_DEBUG');
                 return $thumbnailRelativePath;
             }
 
@@ -53,7 +54,7 @@ class ThumbnailService
             if ($imageInfo === false) {
                 $error = "Cannot get image info: {$absoluteOriginalPath}";
                 Yii::warning($error, __METHOD__);
-                echo "ОШИБКА: {$error}\n"; // Для консоли
+                Yii::info(['error' => $error], 'THUMBNAIL_DEBUG');
                 return null;
             }
 
@@ -64,7 +65,7 @@ class ThumbnailService
             if ($source === null) {
                 $error = "Cannot create image resource: {$absoluteOriginalPath}, type: {$type}";
                 Yii::warning($error, __METHOD__);
-                echo "ОШИБКА: {$error}\n"; // Для консоли
+                Yii::info(['error' => $error, 'type' => $type], 'THUMBNAIL_DEBUG');
                 return null;
             }
 
