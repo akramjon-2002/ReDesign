@@ -6,6 +6,7 @@ use app\modules\telegram\actions\UploadAction;
 use app\models\Texture;
 use app\models\Color;
 use app\models\Request;
+use app\services\ThumbnailService;
 use Yii;
 use yii\web\Controller;
 use yii\web\Response;
@@ -83,7 +84,9 @@ class WebappController extends Controller
             ->offset($offset)
             ->all();
 
+        $thumbnailService = new ThumbnailService();
         $items = [];
+
         foreach ($requests as $req) {
             $item = [
                 'id' => $req->id,
@@ -93,12 +96,28 @@ class WebappController extends Controller
                 'texture_preview' => $req->texture && $req->texture->image_path ? Yii::$app->request->baseUrl . '/' . $req->texture->image_path : null,
                 'color_hex' => $req->color_hex,
             ];
+
+            // Добавляем оригинальные изображения
             if (!empty($req->input_image_path)) {
                 $item['input_url'] = Yii::$app->request->baseUrl . '/' . $req->input_image_path;
+
+                // Добавляем миниатюру для быстрой загрузки в галерее
+                $thumbPath = $thumbnailService->createThumbnail($req->input_image_path, 300, 300, 80);
+                if ($thumbPath) {
+                    $item['input_thumb'] = Yii::$app->request->baseUrl . '/' . $thumbPath;
+                }
             }
+
             if ($req->status === Request::STATUS_COMPLETED && !empty($req->output_image_path)) {
                 $item['output_url'] = Yii::$app->request->baseUrl . '/' . $req->output_image_path;
+
+                // Добавляем миниатюру для быстрой загрузки в галерее
+                $thumbPath = $thumbnailService->createThumbnail($req->output_image_path, 300, 300, 80);
+                if ($thumbPath) {
+                    $item['output_thumb'] = Yii::$app->request->baseUrl . '/' . $thumbPath;
+                }
             }
+
             $items[] = $item;
         }
 

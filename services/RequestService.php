@@ -41,10 +41,16 @@ class RequestService
                 throw new \RuntimeException('Failed to save input image.');
             }
 
+            // Создаем миниатюру для быстрой загрузки в галерее
+            $relativePath = 'uploads/requests/' . $fileName;
+            $thumbnailService = new ThumbnailService();
+            $thumbnailPath = $thumbnailService->createThumbnail($relativePath, 300, 300, 80);
+
             Yii::info([
                 'step' => 'request_image_saved',
                 'absolute_path' => $absolutePath,
-                'relative_path' => 'uploads/requests/' . $fileName,
+                'relative_path' => $relativePath,
+                'thumbnail_path' => $thumbnailPath,
                 'file_size' => is_file($absolutePath) ? filesize($absolutePath) : null,
             ], __METHOD__);
 

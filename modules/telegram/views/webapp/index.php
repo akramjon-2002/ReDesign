@@ -255,9 +255,15 @@ $this->title = 'AI Wall Editor';
 
                 <div class="tab-content" id="tab-texture">
                     <div class="texture-grid">
-                        <?php foreach ($textures as $texture): ?>
+                        <?php foreach ($textures as $texture):
+                            // Используем миниатюру для быстрой загрузки, fallback на оригинал
+                            $pathInfo = pathinfo($texture->image_path);
+                            $thumbPath = $pathInfo['dirname'] . '/thumbs/' . $pathInfo['filename'] . '_thumb.jpg';
+                            $thumbFullPath = Yii::getAlias('@webroot') . '/' . $thumbPath;
+                            $displayPath = file_exists($thumbFullPath) ? $thumbPath : $texture->image_path;
+                        ?>
                         <div class="texture-item" data-texture-id="<?= (int)$texture->id ?>" data-preview="<?= Html::encode($texture->image_path ? Yii::$app->request->baseUrl . '/' . $texture->image_path : '') ?>">
-                            <img src="<?= Html::encode($texture->image_path ? Yii::$app->request->baseUrl . '/' . $texture->image_path : '') ?>" alt="<?= Html::encode($texture->title) ?>">
+                            <img src="<?= Html::encode($displayPath ? Yii::$app->request->baseUrl . '/' . $displayPath : '') ?>" alt="<?= Html::encode($texture->title) ?>" loading="lazy">
                             <span class="texture-name"><?= Html::encode($texture->title) ?></span>
                         </div>
                         <?php endforeach; ?>
@@ -1008,17 +1014,18 @@ async function loadProjects() {
                 var card = document.createElement('div');
                 card.className = 'project-card';
                 card.onclick = function() { openProject(item); };
-                
-                var imgSrc = item.output_url || item.input_url || '';
+
+                // Используем миниатюру для быстрой загрузки, fallback на оригинал
+                var imgSrc = item.output_thumb || item.input_thumb || item.output_url || item.input_url || '';
                 var badgeClass = item.status === 'completed' ? 'edited' : 'raw';
                 var badgeText = item.status === 'completed' ? 'Edited' : 'Raw';
                 var title = item.texture_title || 'Loyiha #' + item.id;
                 var timeAgo = formatTimeAgo(item.created_at);
-                
-                card.innerHTML = '<img src="' + imgSrc + '" alt="">' +
+
+                card.innerHTML = '<img src="' + imgSrc + '" alt="" loading="lazy">' +
                     '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
                     '<div class="info"><h4>' + title + '</h4><span>' + timeAgo + '</span></div>';
-                
+
                 grid.appendChild(card);
             });
         }
@@ -1073,17 +1080,18 @@ async function loadGalleryProjects(reset) {
                     var card = document.createElement('div');
                     card.className = 'project-card';
                     card.onclick = function() { openProject(item); };
-                    
-                    var imgSrc = item.output_url || item.input_url || '';
+
+                    // Используем миниатюру для быстрой загрузки, fallback на оригинал
+                    var imgSrc = item.output_thumb || item.input_thumb || item.output_url || item.input_url || '';
                     var badgeClass = item.status === 'completed' ? 'edited' : 'raw';
                     var badgeText = item.status === 'completed' ? 'Edited' : 'Raw';
                     var title = item.texture_title || 'Loyiha #' + item.id;
                     var timeAgo = formatTimeAgo(item.created_at);
-                    
-                    card.innerHTML = '<img src="' + imgSrc + '" alt="">' +
+
+                    card.innerHTML = '<img src="' + imgSrc + '" alt="" loading="lazy">' +
                         '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
                         '<div class="info"><h4>' + title + '</h4><span>' + timeAgo + '</span></div>';
-                    
+
                     grid.appendChild(card);
                 });
                 

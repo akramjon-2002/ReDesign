@@ -25,10 +25,21 @@ class TextureService
                 $uniqueName = uniqid('tex_') . '.' . $imageFile->extension;
                 $uploadPath = Yii::getAlias('@webroot/uploads/textures');
                 FileHelper::createDirectory($uploadPath);
-                
+
                 $filePath = $uploadPath . '/' . $uniqueName;
                 if ($imageFile->saveAs($filePath)) {
                     $model->image_path = 'uploads/textures/' . $uniqueName;
+
+                    // Создаем миниатюру для быстрой загрузки в интерфейсе
+                    // ВАЖНО: Оригинальный файл НЕ изменяется, AI использует оригинал!
+                    $thumbnailService = new ThumbnailService();
+                    $thumbnailPath = $thumbnailService->createThumbnail($model->image_path, 300, 300, 80);
+
+                    Yii::info([
+                        'action' => 'texture_created',
+                        'texture_path' => $model->image_path,
+                        'thumbnail_path' => $thumbnailPath,
+                    ], __METHOD__);
                 }
             }
 
@@ -58,21 +69,39 @@ class TextureService
         $transaction = Yii::$app->db->beginTransaction();
         try {
             if ($imageFile) {
-                // Delete old image if exists
+                // Delete old image and thumbnail if exists
                 if ($model->image_path) {
                     $oldPath = Yii::getAlias('@webroot/') . $model->image_path;
                     if (file_exists($oldPath)) {
                         @unlink($oldPath);
+                    }
+
+                    // Удаляем старую миниатюру
+                    $pathInfo = pathinfo($model->image_path);
+                    $oldThumbPath = Yii::getAlias('@webroot/') . $pathInfo['dirname'] . '/thumbs/' . $pathInfo['filename'] . '_thumb.jpg';
+                    if (file_exists($oldThumbPath)) {
+                        @unlink($oldThumbPath);
                     }
                 }
 
                 $uniqueName = uniqid('tex_') . '.' . $imageFile->extension;
                 $uploadPath = Yii::getAlias('@webroot/uploads/textures');
                 FileHelper::createDirectory($uploadPath);
-                
+
                 $filePath = $uploadPath . '/' . $uniqueName;
                 if ($imageFile->saveAs($filePath)) {
                     $model->image_path = 'uploads/textures/' . $uniqueName;
+
+                    // Создаем миниатюру для быстрой загрузки в интерфейсе
+                    // ВАЖНО: Оригинальный файл НЕ изменяется, AI использует оригинал!
+                    $thumbnailService = new ThumbnailService();
+                    $thumbnailPath = $thumbnailService->createThumbnail($model->image_path, 300, 300, 80);
+
+                    Yii::info([
+                        'action' => 'texture_updated',
+                        'texture_path' => $model->image_path,
+                        'thumbnail_path' => $thumbnailPath,
+                    ], __METHOD__);
                 }
             }
 
@@ -90,7 +119,7 @@ class TextureService
     }
 
     /**
-     * Delete texture and its image
+     * Delete texture and its image (including thumbnail)
      *
      * @param Texture $model
      * @return bool
@@ -101,9 +130,17 @@ class TextureService
         $transaction = Yii::$app->db->beginTransaction();
         try {
             if ($model->image_path) {
+                // Удаляем оригинальный файл
                 $filePath = Yii::getAlias('@webroot/') . $model->image_path;
                 if (file_exists($filePath)) {
                     @unlink($filePath);
+                }
+
+                // Удаляем миниатюру
+                $pathInfo = pathinfo($model->image_path);
+                $thumbPath = Yii::getAlias('@webroot/') . $pathInfo['dirname'] . '/thumbs/' . $pathInfo['filename'] . '_thumb.jpg';
+                if (file_exists($thumbPath)) {
+                    @unlink($thumbPath);
                 }
             }
 
